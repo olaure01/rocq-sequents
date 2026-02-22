@@ -20,8 +20,6 @@ Unset Printing Use Implicit Types.
 
 Definition Atom := nat : Type.
 
-Implicit Type X : Atom.
-
 Inductive formula :=
 | var (_ : Atom) | wedge (_ _ : formula) | top | vee (_ _ : formula) | bot
 | tens (_ _ : formula) | one | imp (_ _ : formula) | pmi (_ _ : formula).

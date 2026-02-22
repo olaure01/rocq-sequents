@@ -79,10 +79,12 @@ Qed.
 Lemma cut A B C : A ⊢ B -> B ⊢ C -> A ⊢ C.
 Proof.
 intros [n1 pi1]%iall_ialls [n2 pi2]%iall_ialls.
+
 remember (n1 + n2) as n eqn:Hn.
 induction n as [n IHn] in n1, n2, Hn, A, B, C, pi1, pi2 |- * using (well_founded_induction lt_wf). subst n.
 assert (forall m1 m2 A B C, m1 $ A ⊢ B -> m2 $ B ⊢ C -> m1 + m2 < n1 + n2 -> A ⊢ C) as IH; [ | clear IHn ].
 { intros m1 m2 A' B' C' pi1' pi2' Hmn. exact (IHn _ Hmn _ _ _ _ pi1' _ pi2' eq_refl). }
+
 remember pi2 as pi2' eqn:Hpi2.
 destruct pi2';
   try (constructor; (eapply IH; [ eassumption .. | lia ])); (* commutative cases on [pi2] *)

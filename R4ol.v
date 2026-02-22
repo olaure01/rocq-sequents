@@ -26,8 +26,6 @@ Proof. intros [[= <- <-] | [= <- <-]]%PermutationT_length_2_inv; repeat split. Q
 
 Definition Atom := nat : Type.
 
-Implicit Type X : Atom.
-
 Inductive formula := var (_ : bool) (_ : Atom) | bin (_ : bool) (_ _ : formula) | nul (_ : bool).
 Infix "∧" := (bin true) (at level 35).
 Infix "∨" := (bin false) (at level 35).
@@ -49,6 +47,7 @@ Lemma bineg A : ¬¬A = A.
 Proof. induction A; cbn; rewrite negb_involutive; f_equal; assumption. Qed.
 Arguments bineg {_}, _.
 
+(* PAUSE *)
 Fixpoint fsize A := S
 match A with
 | var _ _ | nul _ => 0
@@ -63,7 +62,7 @@ Proof. induction A as [ | ? ? IHA1 ? IHA2 | ]; cbn; rewrite ? IHA1, ? IHA2; refl
 
 Reserved Notation "⊢ A , B" (at level 65).
 Inductive ol : formula -> formula -> Type :=
-| ax X : ⊢ ¬X, X
+| ax (X : Atom) : ⊢ ¬X, X
 | ex A B : ⊢ A, B -> ⊢ B, A
 | w A B C : ⊢ A, C -> ⊢ B, C -> ⊢ A ∧ B, C
 | t C : ⊢ ⊤, C
@@ -77,7 +76,7 @@ Arguments v1 [_ _ _] _, _ [_ _] _.
 Arguments v2 [_ _ _] _, _ [_ _] _.
 Arguments cw [_ _] _, _ [_] _.
 
-Lemma axr X : ⊢ X, ¬X.
+Lemma axr (X : Atom) : ⊢ X, ¬X.
 Proof. apply ex, ax. Qed.
 
 Lemma wr A B C : ⊢ C, A -> ⊢ C, B -> ⊢ C, A ∧ B.
@@ -117,6 +116,7 @@ match pi with
 | ex pi1 | v1 pi1 | v2 pi1 | cw pi1 => pweight pi1
 end.
 
+(* PAUSE *)
 Fixpoint sweight A B (pi : ⊢ A, B) :=
 match pi with
 | ex pi1 | cw pi1 => S (sweight pi1)
@@ -130,6 +130,7 @@ enough (forall A' B' C' D' E', ⊢ ¬B', A' -> ⊢ C', D' -> PermutationT [C'; D
           (⊢ A', E') * (C' = D' -> ⊢ A', A')) as IH.
 { apply (IH _ _ _ _ _ (ex pi1) pi2). reflexivity. }
 clear. intros A B.
+
 remember (fsize B) as d eqn:Hd.
 induction d as [d IHd] in A, B, Hd |- * using (well_founded_induction_type lt_wf). subst d.
 intros C D E pi1.
@@ -151,6 +152,7 @@ assert (forall A' B' C' D' E' (pi1' : ⊢ ¬B', A') (pi2' : ⊢ C', D'),
   - refine (IHn _ Hn _ _ IHd _ _ _ pi1' _ pi2' eq_refl HP).
     rewrite Hs. apply IHs. }
 intro HP.
+
 split; [ | intros Heq ];
   destruct pi2 as [ | C D pi2 | C1 C2 D pi2_1 pi2_2 | C | C2 C1 D pi2 | C1 C2 D pi2 | C D pi2 ]; cbn in *; subst.
 - apply PermutationT_length_2_inv in HP as [ [= -> ->] | [= -> ->] ]; apply ex; assumption.

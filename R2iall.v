@@ -18,8 +18,6 @@ Unset Printing Use Implicit Types.
 
 Definition Atom := nat : Type.
 
-Implicit Type X : Atom.
-
 Inductive formula := var (_ : Atom) | wedge (_ _ : formula) | top | vee (_ _ : formula) | bot.
 Infix "∧" := wedge (at level 35).
 Notation "⊤" := top.
@@ -33,7 +31,7 @@ Coercion var : Atom >-> formula.
 
 Reserved Notation "A ⊢ B" (at level 65).
 Inductive iall : crelation formula (* formula -> formula -> Type *) :=
-| ax X : X ⊢ X
+| ax (X : Atom) : X ⊢ X
 | wr A B C : C ⊢ A -> C ⊢ B -> C ⊢ A ∧ B
 | wl1 B A C : A ⊢ C -> A ∧ B ⊢ C
 | wl2 B A C : A ⊢ C -> B ∧ A ⊢ C
@@ -70,11 +68,13 @@ end.
 Lemma cut A B C : A ⊢ B -> B ⊢ C -> A ⊢ C.
 Proof.
 intros pi1 pi2.
+
 remember (pweight pi1 + pweight pi2) as n eqn:Hn.
 induction n as [n IHn] in A, B, C, pi1, pi2, Hn |- * using (well_founded_induction_type lt_wf). subst n.
 assert (forall A' B' C' (pi1' : A' ⊢ B') (pi2' : B' ⊢ C'),
           pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 -> A' ⊢ C') as IH; [ | clear IHn ].
 { intros A' B' C' pi1' pi2' Hn. exact (IHn _ Hn _ _ _ pi1' pi2' eq_refl). }
+
 remember pi2 as pi2' eqn:Hpi2. apply (f_equal (@pweight _ _)) in Hpi2.
 destruct pi2';
   try (constructor; (let pir := fresh in eapply (IH _ _ _ pi1 ltac:(refine ?[pir]));
@@ -86,7 +86,7 @@ destruct pi2';
   (let pil := fresh in let pir := fresh in eapply (IH _ _ _ ltac:(refine ?[pil]) ltac:(refine ?[pir]));
        (instantiate (pil := ltac:(eassumption)); instantiate (pir := ltac:(eassumption)); cbn; lia)
            (* matches left proof first *)
-     + instantiate (pir := ltac:(eassumption)); instantiate (pil := ltac:(eassumption)); cbn; lia).
+     + (instantiate (pir := ltac:(eassumption)); instantiate (pil := ltac:(eassumption)); cbn; lia)).
            (* matches right proof first *)
 Qed.
 

@@ -20,9 +20,6 @@ Unset Printing Use Implicit Types.
 
 Definition Atom := nat : Type.
 
-Implicit Type X Y : Atom.
-Implicit Type x : Atom + nat.
-
 Inductive formula := var (_ : Atom + nat) | wedge (_ _ : formula) | top | frl (_ : Atom) (_ : formula).
 Infix "∧" := wedge (at level 35).
 Notation "⊤" := top.
@@ -33,6 +30,7 @@ Notation dvar n := (var (inr n)). (* Abbreviation in 9.2 *)
 Coercion clvar := fun X => lvar X.
 Coercion cdvar := fun n => dvar n.
 
+
 Fixpoint fsize A := S
 match A with
 | B ∧ C => fsize B + fsize C
@@ -40,8 +38,9 @@ match A with
 | _ => 0
 end.
 
+
 (** substitutes [formula] [F] for variable [X] in [formula] [A] (capture is possible) *)
-Fixpoint subs X (F A : formula) :=
+Fixpoint subs X (F : formula) A :=
 match A with
 | lvar Y => if Nat.eq_dec Y X then F else Y
 | B ∧ C => (subs X F B) ∧ (subs X F C)

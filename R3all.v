@@ -6,6 +6,7 @@
 
 
 From Stdlib Require Import Bool Lia Wf_nat.
+Import EqNotations.
 
 (* Set Mangle Names. Set Mangle Names Light. *)
 Set Default Goal Selector "!".
@@ -17,8 +18,6 @@ Unset Printing Use Implicit Types.
 (** * Formulas *)
 
 Definition Atom := nat : Type.
-
-Implicit Type X : Atom.
 
 (* PAUSE *)
 Inductive formula := var (_ : bool) (_ : Atom) | bin (_ : bool) (_ _ : formula) | nul (_ : bool).
@@ -33,23 +32,21 @@ Reserved Notation "¬ A" (format "¬ A", at level 25, right associativity).
 Fixpoint neg A :=
 match A with
 | var b X => var (negb b) X
-| bin b A B => bin (negb b) (¬ A) (¬ B)
+| bin b B C => bin (negb b) (¬ B) (¬ C)
 | nul b => nul (negb b)
 end
 where "¬ A" := (neg A).
 
 Lemma bineg A : ¬¬A = A.
 Proof. induction A; cbn; rewrite negb_involutive; f_equal; assumption. Qed.
-
-Lemma coneg A B : ¬A = B <-> A = ¬B.
-Proof. split; [ intros <-; symmetry | intros -> ]; apply bineg. Qed.
+Arguments bineg {_}, _.
 
 
 (** * Proofs *)
 
 Reserved Notation "⊢ A , B" (at level 65).
 Inductive all : formula -> formula -> Type :=
-| ax X : ⊢ ¬X, X
+| ax (X : Atom) : ⊢ ¬X, X
 | ex A B : ⊢ A, B -> ⊢ B, A
 | w A B C : ⊢ A, C -> ⊢ B, C -> ⊢ A ∧ B, C
 | t C : ⊢ ⊤, C
@@ -61,7 +58,7 @@ Arguments t {_}, _.
 Arguments v1 [_ _ _] _, _ [_ _] _.
 Arguments v2 [_ _ _] _, _ [_ _] _.
 
-Lemma axr X : ⊢ X, ¬X.
+Lemma axr (X : Atom) : ⊢ X, ¬X.
 Proof. apply ex, ax. Qed.
 
 Lemma wr A B C : ⊢ C, A -> ⊢ C, B -> ⊢ C, A ∧ B.
