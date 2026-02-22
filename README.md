@@ -1,8 +1,8 @@
 # Dependencies
 
-Working with the `Rocq Prover 9.1`
+Works with the `Rocq Prover >= 9.1`.
 
-Requires [OLlibs](https://github.com/olaure01/ollibs) (add-ons for the standard library): [see installation instructions](https://github.com/olaure01/ollibs/blob/master/README.md).
+Requires [OLlibs](https://github.com/olaure01/ollibs) (add-ons for the standard library): [see installation instructions](https://github.com/olaure01/ollibs/blob/master/README.md) (manual installation required for Rocq >= 9.2+rc1).
 
 # Run
 
