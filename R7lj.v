@@ -70,10 +70,10 @@ Arguments bl {_ _ _}, _ {_ _}.
 Arguments ir [_ _ _] _.
 Arguments il [_ _ _ _ _ _] _ _, _ [_ _ _ _ _] _ _.
 
-Instance imall_PermutationT : Proper (@PermutationT _ ==> eq ==> iffT) lj.
+Instance lj_PermutationT : Proper (@PermutationT _ ==> eq ==> iffT) lj.
 Proof. intros l1 l2 HP B A ->. split; intro pi; [ | symmetry in HP ]; apply (ex HP pi). Qed.
 
-Lemma cw_gen r l l0 C : l ++ concat (repeat l0 r) ⊢ C -> l ++ l0 ⊢ C.
+Lemma cw_gen r l l0 C : l ++ concat (repeat l0 r) ⊢ C -> l ++ l0 ⊢ C. (* PAUSE *)
 Proof.
 intro pi. rewrite PermutationT_app_comm in pi. rewrite PermutationT_app_comm.
 induction r as [ | r IHr ] in l, pi |- *; list_simpl in pi.
@@ -103,36 +103,36 @@ match pi with
 | ax | tr | bl => 0
 | wr pi1 pi2 | vl pi1 pi2 => Nat.max (pweight pi1) (pweight pi2)
 | ex pi1 | co pi1 | wk pi1 | wl1 pi1 | wl2 pi1 | vr1 pi1 | vr2 pi1 | ir pi1 => pweight pi1
-| il pi1 pi2 => (pweight pi1) + (pweight pi2)
+| il pi1 pi2 => pweight pi1 + pweight pi2
 end.
 
 Lemma cut A l1 l l2 B : l ⊢ A -> l1 ++ A :: l2 ⊢ B -> l1 ++ l ++ l2 ⊢ B.
 Proof.
 (* PAUSE *)
 enough (forall r A' l0' l1' l' B', l' ⊢ A' -> l0' ⊢ B' -> PermutationT l0' (repeat A' r ++ l1') ->
-          l1' ++ l' ⊢ B') as mcut.
+          l1' ++ l' ⊢ B') as mcut; [ | clear A l1 l l2 B ].
 { intros pi1 pi2.
   assert (PermutationT (l1 ++ A :: l2) (repeat A 1 ++ l1 ++ l2)) as HP
     by (symmetry; cbn; apply PermutationT_middle).
   apply (mcut _ _ _ _ _ _ pi1 pi2) in HP.
   refine (ex _ HP).
   list_simpl. apply PermutationT_app_head, PermutationT_app_comm. }
-clear A l1 l l2 B. intros r A.
-remember (fsize A) as d eqn:Hd.
+
+intros r A. remember (fsize A) as d eqn:Hd.
 induction d as [d IHd] in A, r, Hd |- * using (well_founded_induction_type lt_wf). subst d.
 assert (forall A' l1' l2' l' B', l' ⊢ A' -> l1' ++ A' :: l2' ⊢ B' -> fsize A' < fsize A -> l1' ++ l' ++ l2' ⊢ B')
   as IHf; [ | clear IHd ].
 { intros A' l1' l2' l' B' pi1' pi2' Hs.
   rewrite <- PermutationT_app_rot, app_assoc. apply (IHd _ Hs 1 _ eq_refl _ _ _ _ pi1' pi2').
   rewrite <- PermutationT_middle. apply PermutationT_cons, PermutationT_app_comm. reflexivity. }
-intros l0 l1 l B pi1 pi2.
-remember (pweight pi1 + pweight pi2) as n eqn:Hn.
+intros l0 l1 l B pi1 pi2. remember (pweight pi1 + pweight pi2) as n eqn:Hn.
 induction n as [n IHn] in r, A, B, l0, l, l1, pi1, pi2, IHf, Hn |- * using (well_founded_induction_type lt_wf).
 subst n.
 assert (forall r' l0' l1' l' B' (pi1' : l' ⊢ A) (pi2' : l0' ⊢ B'), PermutationT l0' (repeat A r' ++ l1') ->
           pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 ->
           l1' ++ l' ⊢ B') as IH; [ | clear IHn ].
 { intros r' l0' l1' l' B' pi1' pi2' HP Hn. exact (IHn _ Hn _ _ IHf _ _ _ _ pi1' pi2' eq_refl HP). }
+
 destruct pi2 as [ | ? ? ? HP2 pi2 | | | ? A' B' pi2_1 pi2_2 | ? B' ? A' ? pi2 | ? A' ? B' ? pi2 |
                 | ? ? ? pi2 | ? ? ? pi2 | ? ? A' B' ? pi2_1 pi2_2 |
                 | ? A' B' pi2 | ? ? ? A' B' ? pi2_1 pi2_2 ]; cbn in IH; intro HP.
@@ -149,7 +149,7 @@ destruct pi2 as [ | ? ? ? HP2 pi2 | | | ? A' B' pi2_1 pi2_2 | ? B' ? A' ? pi2 | 
     symmetry in Heq. apply repeat_eq_elt in Heq as [<- [Heq1 Heq2]].
     rewrite <- Heq1, <- Heq2 in HP. clear Heq1 Heq2.
     apply (IH (S r) _ _ _ _ pi1 pi2); [ | cbn; lia ].
-    rewrite <- PermutationT_middle, app_comm_cons, <- PermutationT_middle. list_simpl.
+    rewrite <- PermutationT_middle, app_comm_cons, <- PermutationT_middle. list_simpl. (* permutations *)
     apply PermutationT_cons; [ reflexivity | ]. rewrite <- HP.
     rewrite app_assoc, app_comm_cons. apply PermutationT_app_tail. rewrite <- Hl.
     rewrite repeat_app. cbn. apply PermutationT_middle.
@@ -171,8 +171,8 @@ destruct pi2 as [ | ? ? ? HP2 pi2 | | | ? A' B' pi2_1 pi2_2 | ? B' ? A' ? pi2 | 
   + apply (IH r _ _ _ _ pi1 pi2_1 HP). cbn. lia.
   + apply (IH r _ _ _ _ pi1 pi2_2 HP). cbn. lia.
 - assert (HP' := HP). symmetry in HP'. apply PermutationT_vs_elt_inv in HP' as [(l0', l2') Heq].
-  decomp_list_eq Heq; subst.
-  + assert (Hl := f_equal (@length _) Heq).
+  decomp_list_eq Heq; subst. (* PAUSE *)
+  + assert (Hl := f_equal (@length _) Heq). (* if the ∧-formula is cut then [0 < r] *)
     rewrite repeat_length, length_app in Hl. cbn in Hl. rewrite Nat.add_succ_r in Hl.
     symmetry in Heq. apply repeat_eq_elt in Heq as [-> _].
     remember (A' ∧ B') as C' eqn:HC.
@@ -182,10 +182,10 @@ destruct pi2 as [ | ? ? ? HP2 pi2 | | | ? A' B' pi2_1 pi2_2 | ? B' ? A' ? pi2 | 
       apply (IH _ _ _ _ _ pi1 (wl1 pi2) HP). cbn. lia.
     * list_apply (@co (l1 ++ l4)). list_apply (IH _ _ _ _ _ pi1 (wl1 pi2) HP). cbn. lia.
     * list_apply (@wk (l1 ++ l4)). list_apply (IH _ _ _ _ _ pi1 (wl1 pi2) HP). cbn. lia.
-    * apply (cw_gen 2). list_simpl. apply (IHf _ _ _ _ _ pi1_1); [ | cbn; lia ].
+    * apply (cw_gen 2). list_simpl. apply (IHf _ _ _ _ _ pi1_1); [ | cbn; lia ]. (* key case *)
       cons2app. rewrite app_assoc.
       apply (IH (length l0' + length l3) _ _ _ _ (wr pi1_1 pi1_2) pi2); [ | cbn; lia ].
-      cbn in HP. symmetry in HP. apply PermutationT_cons_app_inv in HP.
+      cbn in HP. symmetry in HP. apply PermutationT_cons_app_inv in HP. (* permutations *)
       rewrite <- PermutationT_middle, PermutationT_cons_append, <- HP. list_reflexivity.
     * list_apply (@wl1 (l1 ++ l4)). list_apply (IH _ _ _ _ _ pi1 (wl1 pi2) HP). cbn. lia.
     * list_apply (@wl2 (l1 ++ l4)). list_apply (IH _ _ _ _ _ pi1 (wl1 pi2) HP). cbn. lia.
@@ -325,7 +325,7 @@ destruct pi2 as [ | ? ? ? HP2 pi2 | | | ? A' B' pi2_1 pi2_2 | ? B' ? A' ? pi2 | 
       apply PermutationT_app_head. rewrite 2 PermutationT_app_rot. list_reflexivity.
     * list_apply (@il (l1 ++ l5)); [ assumption | ].
       list_apply (IH _ _ _ _ _ pi1_2 (il pi2_1 pi2_2) HP). cbn. lia.
-  + rewrite 2 app_assoc in HP. apply PermutationT_app_inv in HP. list_simpl in HP.
+  + rewrite 2 app_assoc in HP. apply PermutationT_app_inv in HP. (* permutations *)
     list_simpl in HP. rewrite PermutationT_app_swap_app in HP.
     apply PermutationT_app_app_inv in HP as [[[[l0r l23r] l0b] l23b] [[HP1 HP2] [HP3 HP4]]].
     symmetry in HP3. apply PermutationT_repeat in HP3. symmetry in HP3. apply repeat_eq_app in HP3 as [Hr1 Hr2].

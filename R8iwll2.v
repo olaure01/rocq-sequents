@@ -94,9 +94,9 @@ match A with
 | ∀ X B => ∀ X (nsubs n F B)
 | _ => A
 end.
-Notation "A [ B /// n ]" := (nsubs n B A) (at level 8, format "A [ B /// n ]").
+Notation "A [ B /↓ n ]" := (nsubs n B A) (at level 8, format "A [ B /↓ n ]").
 
-Lemma nsubs_subs_com X F n G (Hin : X ∉ G) A : A[F//X][G///n] = A[G///n][F[G///n]//X].
+Lemma nsubs_subs_com X F n G (Hin : X ∉ G) A : A[F//X][G/↓n] = A[G/↓n][F[G/↓n]//X].
 Proof.
 induction A as [ [ Y | m ] | A1 IHA1 A2 IHA2 | | Y A IHA ]; cbn; try reflexivity.
 - destruct (Nat.eq_dec Y X); reflexivity.
@@ -106,7 +106,7 @@ induction A as [ [ Y | m ] | A1 IHA1 A2 IHA2 | | Y A IHA ]; cbn; try reflexivity
 - destruct (Nat.eq_dec Y X); [ | rewrite IHA ]; reflexivity.
 Qed.
 
-Lemma freevars_nsubs n F A : closed F -> freevars A[F///n] = freevars A.
+Lemma freevars_nsubs n F A : closed F -> freevars A[F/↓n] = freevars A.
 Proof.
 intro Hc. induction A as [ [ Y | m ] | A1 IHA1 A2 IHA2 | | Y A IHA ]; cbn; try reflexivity.
 - now destruct (n ?= m).
@@ -158,7 +158,7 @@ induction A as [ [ Y | n ] | A1 IHA1 A2 IHA2 | | Y A IHA ]; cbn.
 - destruct (Nat.eq_dec Y X); [ | rewrite IHA ]; reflexivity.
 Qed.
 
-Lemma fupz_nsubs_com k F A : A[F///k]↑ = A↑[F↑///S k].
+Lemma fupz_nsubs_com k F A : A[F/↓k]↑ = A↑[F↑/↓S k].
 Proof.
 induction A as [ [ Y | n ] | A1 IHA1 A2 IHA2 | | Y A IHA ]; cbn; try reflexivity.
 - cbn. case_eq (k ?= n); try reflexivity.
@@ -168,7 +168,7 @@ induction A as [ [ Y | n ] | A1 IHA1 A2 IHA2 | | Y A IHA ]; cbn; try reflexivity
 - rewrite IHA. reflexivity.
 Qed.
 
-Lemma nsubs_z_fup F A : A↑[F///0] = A.
+Lemma nsubs_z_fup F A : A↑[F/↓0] = A.
 Proof.
 induction A as [ [ Y | n ] | A1 IHA1 A2 IHA2 | | Y A IHA ]; cbn; try reflexivity.
 - rewrite IHA1, IHA2. reflexivity.
@@ -226,7 +226,7 @@ Qed.
 
 (** substitutes [formula] [F] for index [k] in proof [pi] and decreases indexes above [k] *)
 Lemma psubs k F (Hc : closed F) A B (pi : A ⊢ B) :
-  { pi' : A[F///k] ⊢ B[F///k] | pweight pi' = pweight pi }.
+  { pi' : A[F/↓k] ⊢ B[F/↓k] | pweight pi' = pweight pi }.
 Proof.
 induction pi as [ | ? ? ? pi1 IHpi1 pi2 IHpi2 | ? ? ? pi1 IHpi1 | ? ? ? pi1 IHpi1 | | ? ? ? pi1 IHpi1
                 | B ? ? ? Hc1 pi1 IHpi1 ] in k, F, Hc |- *;
@@ -252,12 +252,12 @@ Qed.
 
 Lemma cut A B C : A ⊢ B -> B ⊢ C -> A ⊢ C.
 Proof.
-intros pi1 pi2.
-remember (pweight pi1 + pweight pi2) as n eqn:Hn.
+intros pi1 pi2. remember (pweight pi1 + pweight pi2) as n eqn:Hn.
 induction n as [n IHn] in A, B, C, pi1, pi2, Hn |- * using (well_founded_induction_type lt_wf). subst n.
 assert (forall A' B' C' (pi1' : A' ⊢ B') (pi2' : B' ⊢ C'),
           pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 -> A' ⊢ C') as IH; [ | clear IHn ].
 { intros A' B' C' pi1' pi2' Hn. exact (IHn _ Hn _ _ _ pi1' pi2' eq_refl). }
+
 destruct pi2 as [ | ? A' B' pi2_1 pi2_2 | B' A' ? pi2 | B' A' ? pi2 | | ? A' ? pi2 | ? X A' ? Hc2 pi2 ].
 - assumption.
 - apply wr.

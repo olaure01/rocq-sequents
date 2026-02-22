@@ -98,7 +98,7 @@ match pi with
 | ax | tr | bl | ur => 0
 | wr pi1 pi2 | vl pi1 pi2 => max (pweight pi1) (pweight pi2)
 | ex pi1 | wl1 pi1 | wl2 pi1 | vr1 pi1 | vr2 pi1 | pl pi1 | ul pi1 | ir pi1 => pweight pi1
-| pr pi1 pi2 | il pi1 pi2  => (pweight pi1) + (pweight pi2)
+| pr pi1 pi2 | il pi1 pi2  => pweight pi1 + pweight pi2
 end.
 
 Lemma cut A l1 l l2 B : l ⊢ A -> l1 ++ A :: l2 ⊢ B -> l1 ++ l ++ l2 ⊢ B.
@@ -108,13 +108,13 @@ induction d as [d IHd] in A, B, l, l1 , l2, Hd |- * using (well_founded_inductio
 assert (forall l1' l' l2' A' B', l' ⊢ A' -> l1' ++ A' :: l2' ⊢ B' -> fsize A' < fsize A -> l1' ++ l' ++ l2' ⊢ B')
   as IHf; [ | clear IHd ].
 { intros l1' l' l2' A' B' pi1' pi2' Hs. exact (IHd _ Hs A' _ _ _ _ eq_refl pi1' pi2'). }
-intros pi1 pi2.
-remember (pweight pi1 + pweight pi2) as n eqn:Hn.
+intros pi1 pi2. remember (pweight pi1 + pweight pi2) as n eqn:Hn.
 induction n as [n IHn] in A, B, l, l1, l2, pi1, pi2, IHf, Hn |- * using (well_founded_induction_type lt_wf).
 subst n.
 assert (forall l' l1' l2' B' (pi1' : l' ⊢ A) (pi2' : l1' ++ A :: l2' ⊢ B'),
         pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 -> l1' ++ l' ++ l2' ⊢ B') as IH; [ | clear IHn ].
 { intros l' l1' l2' B' pi1' pi2' Hn. exact (IHn _ Hn _ _ _ _ _ IHf pi1' pi2' eq_refl). }
+
 remember (l1 ++ A :: l2) as l0 eqn:Hl0.
 destruct pi2 as [ | ? ? ? HP2 pi2 | ? ? ? pi2_1 pi2_2 | ? B' ? A' ? pi2 | ? A' ? B' ? pi2 |
                 | ? ? ? pi2 | ? ? ? pi2 | ? ? A' B' ? pi2_1 pi2_2 |
@@ -138,7 +138,7 @@ destruct pi2 as [ | ? ? ? HP2 pi2 | ? ? ? pi2_1 pi2_2 | ? B' ? A' ? pi2 | ? A' ?
     destruct pi1 as [ | ? ? ? HP1 pi1 | ? ? ? pi1_1 pi1_2 | ? ? ? ? ? pi1 | ? ? ? ? ? pi1 |
                     | | | ? ? ? ? ? pi1_1 pi1_2 |
                     | | | | | | ]; destr_eq HC; subst.
-    * rewrite <- HP1.
+    * rewrite <- HP1. (* [setoid_rewrite] in [Type] *)
       apply (IH _ _ _ _ pi1 (wl1 pi2)). cbn. lia.
     * apply (IHf _ _ _ _ _ pi1_1 pi2). cbn. lia.
     * list_apply (@wl1 (l1 ++ l0)). list_apply (IH _ _ _ _ pi1 (wl1 pi2)). cbn. lia.

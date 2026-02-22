@@ -34,6 +34,7 @@ Notation "B ⟜ A" := (pmi A B) (at level 36).
 
 Coercion var : Atom >-> formula.
 
+(* PAUSE *)
 Fixpoint fsize A := S
 match A with
 | var _ | ⊤ | ⊥ | 1 => 0
@@ -44,7 +45,7 @@ end.
 (** * Proofs *)
 
 Reserved Notation "l ⊢ A" (at level 65).
-Inductive lbk : list formula -> formula -> Type :=
+Inductive lbk : list formula -> formula -> Type := (* PAUSE *)
 | ax X : [var X] ⊢ X
 | wr l A B : l ⊢ A -> l ⊢ B -> l ⊢ A ∧ B
 | wl1 l1 B l2 A C : l1 ++ A :: l2 ⊢ C -> l1 ++ A ∧ B :: l2 ⊢ C
@@ -99,43 +100,43 @@ match pi with
 | ax | tr | bl | ur => 0
 | wr pi1 pi2 | vl pi1 pi2 => max (pweight pi1) (pweight pi2)
 | wl1 pi1 | wl2 pi1 | vr1 pi1 | vr2 pi1 | pl pi1 | ul pi1 | ir pi1 | jr pi1 => pweight pi1
-| pr pi1 pi2 | il pi1 pi2 | jl pi1 pi2 => (pweight pi1) + (pweight pi2)
+| pr pi1 pi2 | il pi1 pi2 | jl pi1 pi2 => pweight pi1 + pweight pi2 (* PAUSE *)
 end.
 
 Lemma cut A l1 l l2 B : l ⊢ A -> l1 ++ A :: l2 ⊢ B -> l1 ++ l ++ l2 ⊢ B.
 Proof.
-remember (fsize A) as d eqn:Hd.
+remember (fsize A) as d eqn:Hd. (* PAUSE *)
 induction d as [d IHd] in A, B, l, l1 , l2, Hd |- * using (well_founded_induction_type lt_wf). subst d.
 assert (forall l1' l' l2' A' B', l' ⊢ A' -> l1' ++ A' :: l2' ⊢ B' -> fsize A' < fsize A -> l1' ++ l' ++ l2' ⊢ B')
   as IHf; [ | clear IHd ].
 { intros l1' l' l2' A' B' pi1' pi2' Hs. exact (IHd _ Hs A' _ _ _ _ eq_refl pi1' pi2'). }
-intros pi1 pi2.
-remember (pweight pi1 + pweight pi2) as n eqn:Hn.
+intros pi1 pi2. remember (pweight pi1 + pweight pi2) as n eqn:Hn.
 induction n as [n IHn] in A, B, l, l1 , l2, pi1, pi2, IHf, Hn |- * using (well_founded_induction_type lt_wf).
 subst n.
 assert (forall l' l1' l2' B' (pi1' : l' ⊢ A) (pi2' : l1' ++ A :: l2' ⊢ B'),
         pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 -> l1' ++ l' ++ l2' ⊢ B') as IH; [ | clear IHn ].
 { intros l' l1' l2' B' pi1' pi2' Hn. exact (IHn _ Hn _ _ _ _ _ IHf pi1' pi2' eq_refl). }
-remember (l1 ++ A :: l2) as l0 eqn:Hl0.
+
+remember (l1 ++ A :: l2) as l0 eqn:Hl0. (* PAUSE *)
 destruct pi2 as [ | ? ? ? pi2_1 pi2_2 | ? B' ? A' ? pi2 | ? A' ? B' ? pi2 |
                 | ? ? ? pi2 | ? ? ? pi2 | ? ? A' B' ? pi2_1 pi2_2 |
                 | ? ? A' B' pi2_1 pi2_2 | ? ? A' B' ? pi2 | |
                 | ? A' B' pi2 | ? ? ? A' B' ? pi2_1 pi2_2 | ? A' B' pi2 | ? ? ? A' B' ? pi2_1 pi2_2 ];
   try subst l0; cbn in IH.
-- decomp_list_eq Hl0. list_simpl. assumption.
+- (* PAUSE *) decomp_list_eq Hl0. list_assumption.
 - apply wr.
   + apply (IH _ _ _ _ pi1 pi2_1). cbn. lia.
   + apply (IH _ _ _ _ pi1 pi2_2). cbn. lia.
-- decomp_list_eq Hl0; subst.
+- (* PAUSE *) decomp_list_eq Hl0; subst.
   + list_apply wl1.
-    revert pi2 IH. rewrite app_comm_cons, app_assoc. intros pi2 IH.
-    list_apply (IH _ _ _ _ pi1 pi2). lia.
+    revert pi2 IH. rewrite app_comm_cons, app_assoc. intros pi2 IH. (* list structure on hyp with dependency *)
+    list_apply (IH _ _ _ _ pi1 pi2). lia. (* list structure on conclusion *)
   + remember (A' ∧ B') as C' eqn:HC.
     destruct pi1 as [ | ? ? ? pi1_1 pi1_2 | ? ? ? ? ? pi1 | ? ? ? ? ? pi1 |
                     | | | ? ? ? ? ? pi1_1 pi1_2 |
                     | | | | | | | | ]; destr_eq HC; subst.
     * apply (IHf _ _ _ _ _ pi1_1 pi2). cbn. lia.
-    * list_apply (@wl1 (l1 ++ l0)). list_apply (IH _ _ _ _ pi1 (wl1 pi2)). cbn. lia.
+    * list_apply (@wl1 (l1 ++ l0)). list_apply (IH _ _ _ _ pi1 (wl1 pi2)). cbn. lia. (* provide spltting point *)
     * list_apply (@wl2 (l1 ++ l0)). list_apply (IH _ _ _ _ pi1 (wl1 pi2)). cbn. lia.
     * list_apply (@vl (l1 ++ l0)).
       -- list_apply (IH _ _ _ _ pi1_1 (wl1 pi2)). cbn. lia.
@@ -244,7 +245,7 @@ destruct pi2 as [ | ? ? ? pi2_1 pi2_2 | ? B' ? A' ? pi2 | ? A' ? B' ? pi2 |
       -- list_apply (IH _ _ _ _ pi1_1 (pl pi2)). cbn. lia.
       -- list_apply (IH _ _ _ _ pi1_2 (pl pi2)). cbn. lia.
     * list_apply (@bl (l1 ++ l0)).
-    * list_apply (IHf (l1 ++ l0) _ _ _ _ pi1_2); [ | cbn; lia ].
+    * list_apply (IHf (l1 ++ l0) _ _ _ _ pi1_2); [ | cbn; lia ]. (* stack of cuts *) (* PAUSE *)
       list_apply (IHf _ _ _ _ _ pi1_1 pi2). cbn. lia.
     * list_apply (@pl (l1 ++ l0)). list_apply (IH _ _ _ _ pi1 (pl pi2)). cbn. lia.
     * list_apply (@ul (l1 ++ l0)). list_apply (IH _ _ _ _ pi1 (pl pi2)). cbn. lia.
@@ -364,7 +365,7 @@ Qed.
 
 
 Lemma cut_size A l1 l l2 B (pi1 : l ⊢ A) (pi2 : l1 ++ A :: l2 ⊢ B) :
-  { pi : l1 ++ l ++ l2 ⊢ B | pweight pi < pweight pi1 + pweight pi2 }.
+  { pi : l1 ++ l ++ l2 ⊢ B | pweight pi < pweight pi1 + pweight pi2 }. (* PAUSE *) (* linear system *)
 Proof.
 remember (pweight pi1 + pweight pi2) as n eqn:Hn.
 induction n as [n IHn] in A, B, l, l1 , l2, pi1, pi2, Hn |- * using (well_founded_induction_type lt_wf). subst n.
@@ -372,6 +373,7 @@ assert (forall l' l1' l2' A' B' (pi1' : l' ⊢ A') (pi2' : l1' ++ A' :: l2' ⊢ 
         pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 ->
         { pi : l1' ++ l' ++ l2' ⊢ B' | pweight pi < pweight pi1' + pweight pi2' }) as IH; [ | clear IHn ].
 { intros l' l1' l2' A' B' pi1' pi2' Hn. exact (IHn _ Hn _ _ _ _ _ pi1' pi2' eq_refl). }
+
 remember (l1 ++ A :: l2) as l0 eqn:Hl0.
 destruct pi2 as [ | ? ? ? pi2_1 pi2_2 | ? B' ? A' ? pi2 | ? A' ? B' ? pi2 |
                 | ? ? ? pi2 | ? ? ? pi2 | ? ? A' B' ? pi2_1 pi2_2 |
@@ -379,9 +381,9 @@ destruct pi2 as [ | ? ? ? pi2_1 pi2_2 | ? B' ? A' ? pi2 | ? A' ? B' ? pi2 |
                 | ? A' B' pi2 | ? ? ? A' B' ? pi2_1 pi2_2 | ? A' B' pi2 | ? ? ? A' B' ? pi2_1 pi2_2 ];
   try subst l0; cbn in IH.
 - decomp_list_eq Hl0. list_simpl. exists pi1. lia.
-- destruct (IH _ _ _ _ _ pi1 pi2_1) as [pi_1 Hs1]; [ cbn; lia | ].
+- destruct (IH _ _ _ _ _ pi1 pi2_1) as [pi_1 Hs1]; [ cbn; lia | ]. (* destruct [IH] ... *) (* PAUSE *)
   destruct (IH _ _ _ _ _ pi1 pi2_2) as [pi_2 Hs2]; [ cbn; lia | ].
-  exists (wr pi_1 pi_2). cbn. lia.
+  exists (wr pi_1 pi_2). cbn. lia. (* ... and rebuild *)
 - decomp_list_eq Hl0; subst.
   + revert pi2 IH. list_simpl. rewrite app_comm_cons, app_assoc. intros pi2 IH.
     destruct (IH _ _ _ _ _ pi1 pi2) as [pi Hs]; [ cbn; lia | ].
@@ -561,7 +563,7 @@ destruct pi2 as [ | ? ? ? pi2_1 pi2_2 | ? B' ? A' ? pi2 | ? A' ? B' ? pi2 |
       revert pi_1 pi_2 Hs1 Hs2. list_simpl. rewrite ! app_assoc. intros pi_1 pi_2 Hs1 Hs2.
       exists (vl pi_1 pi_2). cbn. lia.
     * list_simpl. rewrite app_assoc. exists bl. cbn. lia.
-    * destruct (IH _ _ _ _ _ pi1_1 pi2) as [pi Hs]; [ cbn; lia | ].
+    * destruct (IH _ _ _ _ _ pi1_1 pi2) as [pi Hs]; [ cbn; lia | ]. (* stack of cuts *) (* PAUSE *)
       revert pi Hs. list_simpl. rewrite 2 app_assoc. intros pi Hs.
       destruct (IH _ _ _ _ _ pi1_2 pi) as [pi' Hs']; [ cbn; lia | ].
       exists pi'. cbn. lia.

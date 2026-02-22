@@ -73,7 +73,7 @@ assert (forall A' B' C' (pi1' : A' ⊢ B') (pi2' : B' ⊢ C'),
           pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 -> A' ⊢ C') as IH; [ | clear IHn ].
 { intros A' B' C' pi1' pi2' Hn. exact (IHn _ Hn _ _ _ pi1' pi2' eq_refl). }
 
-remember pi2 as pi2' eqn:Hpi2. apply (f_equal (@pweight _ _)) in Hpi2.
+remember pi2 as pi2' eqn:Hpi2. apply (f_equal (@pweight _ _)) in Hpi2. (* PAUSE *)
 destruct pi2';
   try (constructor; (let pir := fresh in eapply (IH _ _ _ pi1 ltac:(refine ?[pir]));
        instantiate (pir := ltac:(eassumption)); cbn; lia)); (* commutative cases on [pi2] *)
