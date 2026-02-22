@@ -5,21 +5,14 @@
 (** size given by [pweight] *)
 
 
-From Stdlib Require Import Bool Lia Wf_nat List.
-From OLlibs Require Import PermutationT_more.
-Import EqNotations ListNotations.
+From Stdlib Require Import Bool Lia Wf_nat.
+Import EqNotations.
 
 (* Set Mangle Names. Set Mangle Names Light. *)
 Set Default Goal Selector "!".
 Set Default Proof Using "Type".
 Set Implicit Arguments.
 Unset Printing Use Implicit Types.
-
-
-(** * Preliminaries *)
-
-Lemma PermutationT_diag T (A B C : T) : PermutationT [A; A] [B; C] -> A = B /\ A = C.
-Proof. intros [[= <- <-] | [= <- <-]]%PermutationT_length_2_inv; repeat split. Qed.
 
 
 (** * Formulas *)
@@ -125,23 +118,20 @@ end.
 
 Lemma cut A B C : ⊢ A, ¬B -> ⊢ B, C -> ⊢ A, C.
 Proof.
-intros pi1 pi2.
-enough (forall A' B' C' D' E', ⊢ ¬B', A' -> ⊢ C', D' -> PermutationT [C'; D'] [B'; E'] ->
-          (⊢ A', E') * (C' = D' -> ⊢ A', A')) as IH.
-{ apply (IH _ _ _ _ _ (ex pi1) pi2). reflexivity. }
-clear. intros A B.
+intros pi1 pi2. (* PAUSE *)
+enough (forall A' B' C' D' E', ⊢ ¬B', A' -> ⊢ C', D' -> (B' = C' /\ E' = D') + (B' = D' /\ E' = C') ->
+          (⊢ A', E') * (C' = D' -> ⊢ A', A')) as IH; [ | clear ].
+{ apply (IH _ _ _ _ _ (ex pi1) pi2). left. split; reflexivity. }
 
-remember (fsize B) as d eqn:Hd.
+intros A B. remember (fsize B) as d eqn:Hd.
 induction d as [d IHd] in A, B, Hd |- * using (well_founded_induction_type lt_wf). subst d.
-intros C D E pi1.
-remember (sweight pi1) as s eqn:Hs.
+intros C D E pi1. remember (sweight pi1) as s eqn:Hs.
 induction s as [s IHs] in A, B, C, D, E, IHd, pi1, Hs |- * using (well_founded_induction_type lt_wf). subst s.
-intro pi2.
-remember (pweight pi2) as n eqn:Hn.
+intro pi2. remember (pweight pi2) as n eqn:Hn.
 induction n as [n IHn] in A, B, C, D, E, IHd, IHs, pi1, pi2, Hn |- * using (well_founded_induction_type lt_wf).
 subst n.
 assert (forall A' B' C' D' E' (pi1' : ⊢ ¬B', A') (pi2' : ⊢ C', D'),
-          PermutationT [C'; D'] [B'; E'] ->
+          (B' = C' /\ E' = D') + (B' = D' /\ E' = C') ->
            ((fsize B' < fsize B) + ((fsize B' = fsize B) * (sweight pi1' < sweight pi1))
           + ((B' = B) * (sweight pi1' = sweight pi1) * (pweight pi2' < pweight pi2)))%type ->
           (⊢ A', E') * (C' = D' -> ⊢ A', A')) as IH; [ | clear IHd IHs IHn ].
@@ -155,152 +145,141 @@ intro HP.
 
 split; [ | intros Heq ];
   destruct pi2 as [ | C D pi2 | C1 C2 D pi2_1 pi2_2 | C | C2 C1 D pi2 | C1 C2 D pi2 | C D pi2 ]; cbn in *; subst.
-- apply PermutationT_length_2_inv in HP as [ [= -> ->] | [= -> ->] ]; apply ex; assumption.
+- destruct HP as [[-> ->] | [-> ->]]; apply ex; assumption.
 - apply (IH _ _ _ _ _ pi1 pi2); [ | intuition lia ].
-  rewrite <- HP. apply PermutationT_swap.
-- apply PermutationT_length_2_inv in HP as [ [= -> ->] | [= -> ->] ].
+  destruct HP as [[-> ->] | [-> ->]]; [ right | left ]; repeat split.
+- destruct HP as [[-> ->] | [-> ->]].
   + remember (¬(C1 ∧ C2)) as E eqn:HE.
     destruct pi1 as [ | A B pi1 | A1 A2 B pi1_1 pi1_2 | | A2 A1 B pi1 | A1 A2 B pi1 | A B pi1 ];
       destr_eq HE; subst.
     * apply ex.
       apply (IH _ _ _ _ _ (rew <- [fun x => ⊢ x, D] bineg in (w pi2_1 pi2_2)) pi1).
-      -- apply PermutationT_swap.
+      -- right. repeat split.
       -- rewrite ! fsize_neg, (bineg (C1 ∧ C2)). cbn. intuition lia.
-    * apply (IH _ _ _ _ _ pi1 pi2_1); [ reflexivity | cbn; intuition lia ].
-    * apply (IH _ _ _ _ _ pi1 pi2_2); [ reflexivity | cbn; intuition lia ].
+    * apply (IH _ _ _ _ _ pi1 pi2_1); [ left; repeat split | cbn; intuition lia ].
+    * apply (IH _ _ _ _ _ pi1 pi2_2); [ left; repeat split | cbn; intuition lia ].
     * apply ex, cw.
-      apply (IH _ _ _ _ (¬(C1 ∧ C2)) (rew <- [fun x => ⊢ x, D] bineg in (w pi2_1 pi2_2)) pi1); try reflexivity.
+      apply (IH _ _ _ _ (¬(C1 ∧ C2)) (rew <- [fun x => ⊢ x, D] bineg in (w pi2_1 pi2_2)) pi1);
+        [ left; repeat split | | reflexivity ].
       rewrite ! fsize_neg, (bineg (C1 ∧ C2)). cbn. intuition lia.
   + apply wr.
-    * apply (IH _ _ _ _ _ pi1 pi2_1); [ | intuition lia ].
-      apply PermutationT_swap.
-    * apply (IH _ _ _ _ _ pi1 pi2_2); [ | intuition lia ].
-      apply PermutationT_swap.
-- apply PermutationT_length_2_inv in HP as [ [= -> ->] | [= -> ->] ].
+    * apply (IH _ _ _ _ _ pi1 pi2_1); [ right; repeat split | intuition lia ].
+    * apply (IH _ _ _ _ _ pi1 pi2_2); [ right; repeat split | intuition lia ].
+- destruct HP as [[-> ->] | [-> ->]].
   + remember (¬⊤) as E eqn:HE.
     destruct pi1 as [ | A B pi1 | A1 A2 B pi1_1 pi1_2 | | A2 A1 B pi1 | A1 A2 B pi1 | A B pi1 ];
       destr_eq HE; subst.
     * apply ex.
       apply (IH _ _ _ _ _ (rew <- [fun x => ⊢ x, C] bineg in t) pi1).
-      -- apply PermutationT_swap.
+      -- right. repeat split.
       -- rewrite ! fsize_neg, (bineg ⊤). cbn. intuition lia.
     * apply ex, cw.
-      apply (IH _ _ _ _ (¬⊤) (rew <- [fun x => ⊢ x, C] bineg in t) pi1); try reflexivity.
+      apply (IH _ _ _ _ (¬⊤) (rew <- [fun x => ⊢ x, C] bineg in t) pi1); [ left; repeat split | | reflexivity ].
       rewrite ! fsize_neg, (bineg ⊤). cbn. intuition lia.
   + apply tr.
-- apply PermutationT_length_2_inv in HP as [ [= -> ->] | [= -> ->] ].
+- destruct HP as [[-> ->] | [-> ->]].
   + remember (¬(C1 ∨ C2)) as E eqn:HE.
     destruct pi1 as [ | A B pi1 | A1 A2 B pi1_1 pi1_2 | | A2 A1 B pi1 | A1 A2 B pi1 | A B pi1 ];
       destr_eq HE; subst.
     * apply ex.
       apply (IH _ _ _ _ _ (rew <- [fun x => ⊢ x, D] bineg in (v1 C2 pi2)) pi1).
-      -- apply PermutationT_swap.
+      -- right. repeat split.
       -- rewrite ! fsize_neg, (bineg (C1 ∨ C2)). cbn. intuition lia.
-    * apply (IH _ _ _ _ _ pi1_1 pi2); [ reflexivity | cbn; intuition lia ].
+    * apply (IH _ _ _ _ _ pi1_1 pi2); [ left; repeat split | cbn; intuition lia ].
     * apply ex, cw.
-      apply (IH _ _ _ _ (¬(C1 ∨ C2)) (rew <- [fun x => ⊢ x, D] bineg in (v1 C2 pi2)) pi1); try reflexivity.
+      apply (IH _ _ _ _ (¬(C1 ∨ C2)) (rew <- [fun x => ⊢ x, D] bineg in (v1 C2 pi2)) pi1);
+        [ left; repeat split | | reflexivity ].
       rewrite ! fsize_neg, (bineg (C1 ∨ C2)). cbn. intuition lia.
   + apply v1r.
-    apply (IH _ _ _ _ _ pi1 pi2); [ | intuition lia ].
-    apply PermutationT_swap.
-- apply PermutationT_length_2_inv in HP as [ [= -> ->] | [= -> ->] ].
+    apply (IH _ _ _ _ _ pi1 pi2); [ right; repeat split | intuition lia ].
+- destruct HP as [[-> ->] | [-> ->]].
   + remember (¬(C1 ∨ C2)) as E eqn:HE.
     destruct pi1 as [ | A B pi1 | A1 A2 B pi1_1 pi1_2 | | A2 A1 B pi1 | A1 A2 B pi1 | A B pi1 ];
       destr_eq HE; subst.
     * apply ex.
       apply (IH _ _ _ _ _ (rew <- [fun x => ⊢ x, D] bineg in (v2 C1 pi2)) pi1).
-      -- apply PermutationT_swap.
+      -- right. repeat split.
       -- rewrite ! fsize_neg, (bineg (C1 ∨ C2)). cbn. intuition lia.
-    * apply (IH _ _ _ _ _ pi1_2 pi2); [ reflexivity | cbn; intuition lia ].
+    * apply (IH _ _ _ _ _ pi1_2 pi2); [ left; repeat split | cbn; intuition lia ].
     * apply ex, cw.
-      apply (IH _ _ _ _ (¬(C1 ∨ C2)) (rew <- [fun x => ⊢ x, D] bineg in (v2 C1 pi2)) pi1); try reflexivity.
+      apply (IH _ _ _ _ (¬(C1 ∨ C2)) (rew <- [fun x => ⊢ x, D] bineg in (v2 C1 pi2)) pi1);
+        [ left; repeat split | | reflexivity ].
       rewrite ! fsize_neg, (bineg (C1 ∨ C2)). cbn. intuition lia.
   + apply v2r.
-    apply (IH _ _ _ _ _ pi1 pi2); [ | intuition lia ].
-    apply PermutationT_swap.
-- apply PermutationT_length_2_inv in HP as [ [= -> ->] | [= -> ->] ].
+    apply (IH _ _ _ _ _ pi1 pi2); [ right; repeat split | intuition lia ].
+- destruct HP as [[-> ->] | [-> ->]].
   + apply cw.
-    apply (IH _ _ _ _ D pi1 pi2); [ | intuition lia | ]; reflexivity.
+    apply (IH _ _ _ _ D pi1 pi2); [ left; repeat split | intuition lia | reflexivity ].
   + apply ex, cw. assumption.
 - discriminate Heq.
 - apply (IH _ _ _ _ _ pi1 pi2 HP); [ intuition lia | reflexivity ].
-- apply PermutationT_diag in HP as [<- <-].
+- assert ((B = C1 ∧ C2 /\ E = C1 ∧ C2)) as [-> ->] by (destruct HP; assumption).
   remember (¬(C1 ∧ C2)) as E eqn:HE.
   destruct pi1 as [ | A B pi1 | A1 A2 B pi1_1 pi1_2 | | A2 A1 B pi1 | A1 A2 B pi1 | A B pi1 ]; destr_eq HE; subst.
-  + assert (pi'1 := fst (IH _ _ _ _ _ (ex pi1) pi2_1 ltac:(apply PermutationT_swap) ltac:(intuition lia))).
-    assert (pi'2 := fst (IH A _ _ _ _ (ex pi1) pi2_2 ltac:(apply PermutationT_swap) ltac:(intuition lia))).
+  + assert (pi'1 := fst (IH _ _ _ _ _ (ex pi1) pi2_1 ltac:(right; repeat split) ltac:(intuition lia))).
+    assert (pi'2 := fst (IH A _ _ _ _ (ex pi1) pi2_2 ltac:(right; repeat split) ltac:(intuition lia))).
     apply ex in pi'1, pi'2.
     refine (fst (IH _ _ _ _ A (rew <- [fun x => ⊢ x, A] bineg in (w pi'1 pi'2)) pi1 _ _)).
-    * apply PermutationT_swap.
+    * right. repeat split.
     * rewrite ! fsize_neg, (bineg (C1 ∧ C2)). cbn. intuition lia.
   + unshelve refine (fst (IH _ _ B C1 _ pi1 _ _ _)).
-    * apply (IH _ (C1 ∧ C2) _ _ _ (v1 pi1) pi2_1).
-      -- apply PermutationT_swap.
-      -- intuition lia.
-    * apply PermutationT_swap.
+    * apply (IH _ (C1 ∧ C2) _ _ _ (v1 pi1) pi2_1); [ right; repeat split | intuition lia ].
+    * right. repeat split.
     * cbn. intuition lia.
   + unshelve refine (fst (IH _ _ B C2 _ pi1 _ _ _)).
-    * apply (IH _ (C1 ∧ C2) _ _ _ (v2 pi1) pi2_2).
-      -- apply PermutationT_swap.
-      -- intuition lia.
-    * apply PermutationT_swap.
+    * apply (IH _ (C1 ∧ C2) _ _ _ (v2 pi1) pi2_2); [ right; repeat split | intuition lia ].
+    * right. repeat split.
     * cbn. intuition lia.
-  + assert (pi'1 := fst (IH A _ _ _ _ (cw pi1) pi2_1 ltac:(apply PermutationT_swap) ltac:(intuition lia))).
-    assert (pi'2 := fst (IH A _ _ _ _ (cw pi1) pi2_2 ltac:(apply PermutationT_swap) ltac:(intuition lia))).
+  + assert (pi'1 := fst (IH A _ _ _ _ (cw pi1) pi2_1 ltac:(right; repeat split) ltac:(intuition lia))).
+    assert (pi'2 := fst (IH A _ _ _ _ (cw pi1) pi2_2 ltac:(right; repeat split) ltac:(intuition lia))).
     apply ex in pi'1, pi'2.
     apply (IH _ _ _ _ (¬(C1 ∧ C2)) (rew <- [fun x => ⊢ x, A] bineg in (w pi'1 pi'2)) pi1).
-    * apply PermutationT_swap.
+    * right. repeat split.
     * rewrite ! fsize_neg, (bineg (C1 ∧ C2)). cbn. intuition lia.
     * reflexivity.
-- apply PermutationT_diag in HP as [<- <-].
+- assert (B = ⊤ /\ E = ⊤) as [-> ->] by (destruct HP; assumption).
   remember (¬⊤) as E eqn:HE.
   destruct pi1 as [ | A B pi1 | A1 A2 B pi1_1 pi1_2 | | A2 A1 B pi1 | A1 A2 B pi1 | A B pi1 ]; destr_eq HE; subst.
-  + refine (fst (IH A _ _ _ A (rew <- [fun x => ⊢ x, A] bineg in t) pi1 _ _)).
-    -- apply PermutationT_swap.
-    -- rewrite ! fsize_neg, (bineg ⊤). cbn. intuition lia.
-  + refine (snd (IH A _ _ _ (¬⊤) (rew <- [fun x => ⊢ x, A] bineg in t) pi1 _ _) eq_refl).
-    -- reflexivity.
-    -- rewrite ! fsize_neg, (bineg ⊤). cbn. intuition lia.
-- apply PermutationT_diag in HP as [<- <-].
+  + refine (fst (IH A _ _ _ A (rew <- [fun x => ⊢ x, A] bineg in t) pi1 _ _)); [ right; repeat split | ].
+    rewrite ! fsize_neg, (bineg ⊤). cbn. intuition lia.
+  + refine (snd (IH A _ _ _ (¬⊤) (rew <- [fun x => ⊢ x, A] bineg in t) pi1 _ _) eq_refl);
+      [ left; repeat split | ].
+    rewrite ! fsize_neg, (bineg ⊤). cbn. intuition lia.
+- assert (B = C1 ∨ C2 /\ E = C1 ∨ C2) as [-> ->] by (destruct HP; assumption).
   remember (¬(C1 ∨ C2)) as E eqn:HE.
   destruct pi1 as [ | A B pi1 | A1 A2 B pi1_1 pi1_2 | | A2 A1 B pi1 | A1 A2 B pi1 | A B pi1 ]; destr_eq HE; subst.
-  + assert (pi' := fst (IH _ _ _ _ _ (ex pi1) pi2 ltac:(apply PermutationT_swap) ltac:(intuition lia))).
+  + assert (pi' := fst (IH _ _ _ _ _ (ex pi1) pi2 ltac:(right; repeat split) ltac:(intuition lia))).
     apply ex in pi'.
-    refine (fst (IH _ _ _ _ A (rew <- [fun x => ⊢ x, A] bineg in (v1 pi')) pi1 _ _)).
-    * apply PermutationT_swap.
-    * rewrite ! fsize_neg, (bineg (C1 ∨ C2)). cbn. intuition lia.
+    refine (fst (IH _ _ _ _ A (rew <- [fun x => ⊢ x, A] bineg in (v1 pi')) pi1 _ _)); [ right; repeat split | ].
+    rewrite ! fsize_neg, (bineg (C1 ∨ C2)). cbn. intuition lia.
   + unshelve refine (fst (IH _ _ B C1 _ pi1_1 _ _ _)).
-    * apply (IH _ (C1 ∨ C2) _ _ _ (w pi1_1 pi1_2) pi2).
-      -- apply PermutationT_swap.
-      -- intuition lia.
-    * apply PermutationT_swap.
+    * apply (IH _ (C1 ∨ C2) _ _ _ (w pi1_1 pi1_2) pi2); [ right; repeat split | intuition lia ].
+    * right. repeat split.
     * cbn. intuition lia.
-  + assert (pi' := fst (IH A _ _ _ _ (cw pi1) pi2 ltac:(apply PermutationT_swap) ltac:(intuition lia))).
+  + assert (pi' := fst (IH A _ _ _ _ (cw pi1) pi2 ltac:(right; repeat split) ltac:(intuition lia))).
     apply ex in pi'.
     apply (IH _ _ _ _ (¬(C1 ∨ C2)) (rew <- [fun x => ⊢ x, A] bineg in (v1 C2 pi')) pi1).
-    * apply PermutationT_swap.
+    * right. repeat split.
     * rewrite ! fsize_neg, (bineg (C1 ∨ C2)). cbn. intuition lia.
     * reflexivity.
-- apply PermutationT_diag in HP as [<- <-].
+- assert (B = C1 ∨ C2 /\ E = C1 ∨ C2) as [-> ->] by (destruct HP; assumption).
   remember (¬(C1 ∨ C2)) as E eqn:HE.
   destruct pi1 as [ | A B pi1 | A1 A2 B pi1_1 pi1_2 | | A2 A1 B pi1 | A1 A2 B pi1 | A B pi1 ]; destr_eq HE; subst.
-  + assert (pi' := fst (IH _ _ _ _ _ (ex pi1) pi2 ltac:(apply PermutationT_swap) ltac:(intuition lia))).
+  + assert (pi' := fst (IH _ _ _ _ _ (ex pi1) pi2 ltac:(right; repeat split) ltac:(intuition lia))).
     apply ex in pi'.
     refine (fst (IH _ _ _ _ A (rew <- [fun x => ⊢ x, A] bineg in (v2 pi')) pi1 _ _)).
-    * apply PermutationT_swap.
+    * right. repeat split.
     * rewrite ! fsize_neg, (bineg (C1 ∨ C2)). cbn. intuition lia.
   + unshelve refine (fst (IH _ _ B C2 _ pi1_2 _ _ _)).
-    * apply (IH _ (C1 ∨ C2) _ _ _ (w pi1_1 pi1_2) pi2).
-      -- apply PermutationT_swap.
-      -- intuition lia.
-    * apply PermutationT_swap.
+    * apply (IH _ (C1 ∨ C2) _ _ _ (w pi1_1 pi1_2) pi2); [ right; repeat split | intuition lia ].
+    * right. repeat split.
     * cbn. intuition lia.
-  + assert (pi' := fst (IH A _ _ _ _ (cw pi1) pi2 ltac:(apply PermutationT_swap) ltac:(intuition lia))).
+  + assert (pi' := fst (IH A _ _ _ _ (cw pi1) pi2 ltac:(right; repeat split) ltac:(intuition lia))).
     apply ex in pi'.
     apply (IH _ _ _ _ (¬(C1 ∨ C2)) (rew <- [fun x => ⊢ x, A] bineg in (v2 C1 pi')) pi1).
-    * apply PermutationT_swap.
+    * right. repeat split.
     * rewrite ! fsize_neg, (bineg (C1 ∨ C2)). cbn. intuition lia.
     * reflexivity.
-- apply PermutationT_diag in HP as [<- <-].
-  apply (IH _ _ _ _ C pi1 pi2); [ | intuition lia | ]; reflexivity.
+- assert (B = C /\ E = C) as [-> ->] by (destruct HP; assumption).
+  apply (IH _ _ _ _ C pi1 pi2); [ left; repeat split | intuition lia | reflexivity ].
 Qed.

@@ -97,13 +97,12 @@ end.
 
 Lemma cut A B C : ⊢ A, ¬B -> ⊢ B, C -> ⊢ A, C.
 Proof.
-intros pi1 pi2.
-(* PAUSE *)
-enough (forall D E, ⊢ D, E -> ((D = A) * (E = ¬B)) + ((D = ¬B) * (E = A)) -> ⊢ A, C) as H
+intros pi1 pi2. (* PAUSE *)
+enough (forall D E, ⊢ D, E -> (D = A /\ E = ¬B) + (D = ¬B /\ E = A) -> ⊢ A, C) as H
   by (apply (H _ _ pi1); left; split; reflexivity).
-clear pi1. intros D E pi1.
+clear pi1.
 
-remember (pweight pi1 + pweight pi2) as n eqn:Hn.
+intros D E pi1. remember (pweight pi1 + pweight pi2) as n eqn:Hn.
 induction n as [n IHn] in A, B, C, D, E, pi1, pi2, Hn |- * using (well_founded_induction_type lt_wf). subst n.
 assert (forall A' B' C' (pi1' : ⊢ A', ¬B') (pi2' : ⊢ B', C'),
           pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 -> ⊢ A', C') as IH1.

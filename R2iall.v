@@ -67,9 +67,7 @@ end.
 
 Lemma cut A B C : A ⊢ B -> B ⊢ C -> A ⊢ C.
 Proof.
-intros pi1 pi2.
-
-remember (pweight pi1 + pweight pi2) as n eqn:Hn.
+intros pi1 pi2. remember (pweight pi1 + pweight pi2) as n eqn:Hn.
 induction n as [n IHn] in A, B, C, pi1, pi2, Hn |- * using (well_founded_induction_type lt_wf). subst n.
 assert (forall A' B' C' (pi1' : A' ⊢ B') (pi2' : B' ⊢ C'),
           pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 -> A' ⊢ C') as IH; [ | clear IHn ].
