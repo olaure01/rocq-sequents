@@ -88,8 +88,8 @@ Lemma ax_gen A : [A] ⊢ A.
 Proof.
 induction A; try now rewrite <- (app_nil_l _); repeat constructor.
 - apply (@pl []).
-  apply (@pr [A1]); assumption.
-- constructor. apply (@il [] [A1]); assumption.
+  apply (@pr [_]); assumption.
+- constructor. apply (@il [] [_]); assumption.
 Qed.
 
 

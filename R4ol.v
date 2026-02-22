@@ -29,11 +29,12 @@ Definition Atom := nat : Type.
 Implicit Type X : Atom.
 
 Inductive formula := var (_ : bool) (_ : Atom) | bin (_ : bool) (_ _ : formula) | nul (_ : bool).
-Coercion pvar := var true.
 Infix "∧" := (bin true) (at level 35).
 Infix "∨" := (bin false) (at level 35).
 Notation "⊤" := (nul true).
 Notation "⊥" := (nul false).
+
+Coercion pvar := var true.
 
 Reserved Notation "¬ A" (format "¬ A", at level 25, right associativity).
 Fixpoint neg A :=
@@ -99,7 +100,7 @@ Proof. intro. apply ex, cw. assumption. Qed.
 
 Lemma ax_gen A : ⊢ ¬A, A.
 Proof.
-induction A as [ b X | b A IHA B IHB | ]; destruct b; try now constructor.
+induction A as [ b X | b A IHA B IHB | b ]; destruct b; try now constructor.
 - apply axr.
 - apply wr; [ apply v1 | apply v2 ]; assumption.
 - apply w; [ apply v1r | apply v2r ]; assumption.
@@ -151,7 +152,7 @@ assert (forall A' B' C' D' E' (pi1' : ⊢ ¬B', A') (pi2' : ⊢ C', D'),
     rewrite Hs. apply IHs. }
 intro HP.
 split; [ | intros Heq ];
-  destruct pi2 as [ | C D pi2 | C1 C2 D pi2_1 pi2_2 | | C2 C1 D pi2 | C1 C2 D pi2 | C D pi2 ]; cbn in *; subst.
+  destruct pi2 as [ | C D pi2 | C1 C2 D pi2_1 pi2_2 | C | C2 C1 D pi2 | C1 C2 D pi2 | C D pi2 ]; cbn in *; subst.
 - apply PermutationT_length_2_inv in HP as [ [= -> ->] | [= -> ->] ]; apply ex; assumption.
 - apply (IH _ _ _ _ _ pi1 pi2); [ | intuition lia ].
   rewrite <- HP. apply PermutationT_swap.

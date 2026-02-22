@@ -128,7 +128,7 @@ Notation "A ↑" := (fup 0 A) (at level 8, format "A ↑").
 Lemma fsize_fup k A : fsize (fup k A) = fsize A.
 Proof.
 induction A as [ [ X | n ] | A1 IHA1 A2 IHA2 | | X A IHA ]; cbn; try reflexivity.
-- destruct k; [ | destruct (n <=? k)]; reflexivity.
+- destruct k as [ | k ]; [ | destruct (n <=? k)]; reflexivity.
 - rewrite IHA1, IHA2. reflexivity.
 - rewrite IHA. reflexivity.
 Qed.
@@ -136,7 +136,7 @@ Qed.
 Lemma freevars_fup k A : freevars (fup k A) = freevars A.
 Proof.
 induction A as [ [ X | n ] | A1 IHA1 A2 IHA2 | | X A IHA ]; cbn; try reflexivity.
-- destruct k; [ | destruct (n <=? k) ]; reflexivity.
+- destruct k as [ | k ]; [ | destruct (n <=? k) ]; reflexivity.
 - rewrite IHA1, IHA2. reflexivity.
 - rewrite IHA. reflexivity.
 Qed.
@@ -144,7 +144,7 @@ Qed.
 Lemma fupz_fup_com k A : (fup k A)↑ = fup (S k) A↑.
 Proof.
 induction A as [ [ X | n ] | A1 IHA1 A2 IHA2 | | X A IHA ]; cbn; try reflexivity.
-- destruct k; [ | destruct (n <=? k) ]; reflexivity.
+- destruct k as [ | k ]; [ | destruct (n <=? k) ]; reflexivity.
 - rewrite IHA1, IHA2. reflexivity.
 - rewrite IHA. reflexivity.
 Qed.
@@ -153,7 +153,7 @@ Lemma fup_subs_com k X F A : fup k A[F//X] = (fup k A)[fup k F//X].
 Proof.
 induction A as [ [ Y | n ] | A1 IHA1 A2 IHA2 | | Y A IHA ]; cbn.
 - destruct (Nat.eq_dec Y X); reflexivity.
-- destruct k; [ | destruct (n <=? k) ]; reflexivity.
+- destruct k as [ | k ]; [ | destruct (n <=? k) ]; reflexivity.
 - rewrite IHA1, IHA2. reflexivity.
 - reflexivity.
 - destruct (Nat.eq_dec Y X); [ | rewrite IHA ]; reflexivity.
@@ -206,50 +206,46 @@ end.
 (** lift indexes above [k] in proof [pi] *)
 Lemma pup k A B (pi : A ⊢ B) : { pi' : fup k A ⊢ fup k B | pweight pi' = pweight pi }.
 Proof.
-induction pi in k |- *;
-  try (destruct (IHpi k) as [pi' Hs]) ;
-  try (destruct (IHpi1 k) as [pi1' Hs1]) ;
-  try (destruct (IHpi2 k) as [pi2' Hs2]).
+induction pi as [ | ? ? ? pi1 IHpi1 pi2 IHpi2 | ? ? ? pi1 IHpi1 | ? ? ? pi1 IHpi1 | | ? ? ? pi1 IHpi1
+                | ? ? ? ? Hc pi1 IHpi1 ] in k |- *;
+  try destruct (IHpi1 k) as [pi1' Hs1];
+  try destruct (IHpi2 k) as [pi2' Hs2].
 - exists ax. reflexivity.
 - exists (wr pi1' pi2'). cbn. lia.
-- exists (wl1 pi'). cbn. lia.
-- exists (wl2 pi'). cbn. lia.
+- exists (wl1 pi1'). cbn. lia.
+- exists (wl2 pi1'). cbn. lia.
 - exists tr. cbn. lia.
-- clear pi' Hs.
-  destruct (IHpi (S k)) as [pi' Hs].
-  cbn. rewrite <- Hs. clear Hs.
-  revert pi'.
-  rewrite fup_subs_com, <- ! fupz_fup_com. cbn. intro pi'.
+- clear pi1' Hs1.
+  cbn. destruct (IHpi1 (S k)) as [pi1' <-].
+  revert pi1'. rewrite fup_subs_com, <- ! fupz_fup_com. cbn. intro pi'.
   exists (fr pi'). cbn. lia.
-- cbn. rewrite <- Hs. clear Hs.
-  rewrite <- (freevars_fup k) in e.
-  revert pi'. rewrite fup_subs_com. intro pi'.
-  exists (fl e pi'). cbn. lia.
+- cbn. rewrite <- Hs1. clear Hs1.
+  rewrite <- (freevars_fup k) in Hc.
+  revert pi1'. rewrite fup_subs_com. intro pi1'.
+  exists (fl Hc pi1'). cbn. lia.
 Qed.
 
 (** substitutes [formula] [F] for index [k] in proof [pi] and decreases indexes above [k] *)
 Lemma psubs k F (Hc : closed F) A B (pi : A ⊢ B) :
   { pi' : A[F///k] ⊢ B[F///k] | pweight pi' = pweight pi }.
 Proof.
-induction pi in k, F, Hc |- *;
-  try (destruct (IHpi k F Hc) as [pi' Hs]);
-  try (destruct (IHpi1 k F Hc) as [pi1' Hs1]);
-  try (destruct (IHpi2 k F Hc) as [pi2' Hs2]).
+induction pi as [ | ? ? ? pi1 IHpi1 pi2 IHpi2 | ? ? ? pi1 IHpi1 | ? ? ? pi1 IHpi1 | | ? ? ? pi1 IHpi1
+                | B ? ? ? Hc1 pi1 IHpi1 ] in k, F, Hc |- *;
+  try destruct (IHpi1 k F Hc) as [pi1' Hs1];
+  try destruct (IHpi2 k F Hc) as [pi2' Hs2].
 - exists ax. reflexivity.
 - exists (wr pi1' pi2'). cbn. lia.
-- exists (wl1 pi'). cbn. lia.
-- exists (wl2 pi'). cbn. lia.
+- exists (wl1 pi1'). cbn. lia.
+- exists (wl2 pi1'). cbn. lia.
 - exists tr. cbn. lia.
-- clear pi' Hs.
-  rewrite <- (freevars_fup 0) in Hc.
-  destruct (IHpi (S k) _ Hc) as [pi' Hs].
-  cbn. rewrite <- Hs. clear Hs.
-  revert pi'. rewrite nsubs_subs_com, <- ! fupz_nsubs_com by (rewrite Hc; intros []). intro pi'.
-  exists (fr pi'). reflexivity.
-- cbn. rewrite <- Hs. clear Hs.
-  revert pi'. rewrite nsubs_subs_com by (rewrite Hc; intros []). intro pi'.
+- clear pi1' Hs1. cbn.
+  rewrite <- (freevars_fup 0) in Hc. destruct (IHpi1 (S k) _ Hc) as [pi1' <-].
+  revert pi1'. rewrite nsubs_subs_com, <- ! fupz_nsubs_com by (rewrite Hc; intros []). intro pi1'.
+  exists (fr pi1'). reflexivity.
+- cbn. rewrite <- Hs1. clear Hs1.
+  revert pi1'. rewrite nsubs_subs_com by (rewrite Hc; intros []). intro pi1'.
   assert (closed (nsubs k F B)) as Hc' by (rewrite freevars_nsubs; assumption).
-  exists (fl Hc' pi'). cbn. lia.
+  exists (fl Hc' pi1'). cbn. lia.
 Qed.
 
 
@@ -330,10 +326,12 @@ Qed.
 
 Lemma axiom_expansion A B : A ⊢ B <=> A ⊩ B.
 Proof.
-split; intro pi; induction pi; try now constructor.
+split; intro pi;
+  induction pi as [ | ? ? ? pi1 IHpi1 pi2 IHpi2 | ? ? ? pi1 IHpi1 | ? ? ? pi1 IHpi1 | | ? ? ? pi1 IHpi1
+                  | ? ? ? ? Hc pi1 IHpi1 ]; try now constructor.
 - apply ax_gen.
-- apply (fl_at _ _ _ e). assumption.
-- apply (fl e). assumption.
+- apply (fl_at _ _ _ Hc). assumption.
+- apply (fl Hc). assumption.
 Qed.
 
 Lemma cut_at A B C : A ⊩ B -> B ⊩ C -> A ⊩ C.

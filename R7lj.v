@@ -94,7 +94,7 @@ Qed.
 Lemma ax_gen A : [A] ⊢ A.
 Proof.
 induction A; try now rewrite <- (app_nil_l _); do 2 constructor.
-constructor. apply (@il [] [A1]); assumption.
+constructor. apply (@il [] [_]); assumption.
 Qed.
 
 

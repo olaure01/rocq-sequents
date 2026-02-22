@@ -22,11 +22,12 @@ Implicit Type X : Atom.
 
 (* PAUSE *)
 Inductive formula := var (_ : bool) (_ : Atom) | bin (_ : bool) (_ _ : formula) | nul (_ : bool).
-Coercion pvar := var true.
 Infix "∧" := (bin true) (at level 35).
 Infix "∨" := (bin false) (at level 35).
 Notation "⊤" := (nul true).
 Notation "⊥" := (nul false).
+
+Coercion pvar := var true.
 
 Reserved Notation "¬ A" (format "¬ A", at level 25, right associativity).
 Fixpoint neg A :=
@@ -80,7 +81,7 @@ Proof. intro. apply ex, v2, ex. assumption. Qed.
 
 Lemma ax_gen A : ⊢ ¬A, A.
 Proof.
-induction A as [ b X | b A IHA B IHB | ]; destruct b; try now constructor.
+induction A as [ b X | b A IHA B IHB | b ]; destruct b; try now constructor.
 - apply axr.
 - apply wr; [ apply v1 | apply v2 ]; assumption.
 - apply w; [ apply v1r | apply v2r ]; assumption.
