@@ -25,8 +25,8 @@ Inductive formula := var (_ : bool) (_ : Atom) | bin (_ : bool) (_ _ : formula) 
 Coercion pvar := var true.
 Infix "∧" := (bin true) (at level 35).
 Infix "∨" := (bin false) (at level 35).
-Notation "'𝖳'" := (nul true).
-Notation "'⊥'" := (nul false).
+Notation "⊤" := (nul true).
+Notation "⊥" := (nul false).
 
 Reserved Notation "¬ A" (format "¬ A", at level 25, right associativity).
 Fixpoint neg A :=
@@ -51,7 +51,7 @@ Inductive all : formula -> formula -> Type :=
 | ax X : ⊢ ¬X, X
 | ex A B : ⊢ A, B -> ⊢ B, A
 | w A B C : ⊢ A, C -> ⊢ B, C -> ⊢ A ∧ B, C
-| t C : ⊢ 𝖳, C
+| t C : ⊢ ⊤, C
 | v1 B A C : ⊢ A, C -> ⊢ A ∨ B, C
 | v2 B A C : ⊢ A, C -> ⊢ B ∨ A, C
 where "⊢ A , B" := (all A B).
@@ -66,7 +66,7 @@ Proof. apply ex, ax. Qed.
 Lemma wr A B C : ⊢ C, A -> ⊢ C, B -> ⊢ C, A ∧ B.
 Proof. intros. apply ex, w; apply ex; assumption. Qed.
 
-Lemma tr C : ⊢ C, 𝖳.
+Lemma tr C : ⊢ C, ⊤.
 Proof. apply ex, t. Qed.
 
 Lemma v1r B A C : ⊢ C, A -> ⊢ C, A ∨ B.
@@ -150,15 +150,15 @@ destruct pi2 as [ | B C pi2 | B1 B2 C pi2_1 pi2_2 | | B2 B1 C pi2 | B1 B2 C pi2 
   + remember ⊥ as D eqn:HD.
     destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; subst.
     * discriminate HD.
-    * apply (IH2 _ 𝖳 _ pi1 t). cbn. lia.
-    * apply w; [ apply (IH1 _ 𝖳 _ pi1_1 t)
-               | apply (IH1 _ 𝖳 _ pi1_2 t) ]; cbn; lia.
+    * apply (IH2 _ ⊤ _ pi1 t). cbn. lia.
+    * apply w; [ apply (IH1 _ ⊤ _ pi1_1 t)
+               | apply (IH1 _ ⊤ _ pi1_2 t) ]; cbn; lia.
     * apply t.
-    * apply v1. apply (IH1 _ 𝖳 _ pi1 t). cbn. lia.
-    * apply v2. apply (IH1 _ 𝖳 _ pi1 t). cbn. lia.
+    * apply v1. apply (IH1 _ ⊤ _ pi1 t). cbn. lia.
+    * apply v2. apply (IH1 _ ⊤ _ pi1 t). cbn. lia.
   + remember ⊥ as D eqn:HD.
     destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; try destr_eq HD; subst.
-    apply (IH1 _ 𝖳 _ pi1 t). cbn. lia.
+    apply (IH1 _ ⊤ _ pi1 t). cbn. lia.
 - split; intros -> ->.
   + remember (¬B1 ∧ ¬B2) as D eqn:HD.
     destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; subst.

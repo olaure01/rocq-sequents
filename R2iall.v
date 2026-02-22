@@ -22,9 +22,9 @@ Implicit Type X : Atom.
 
 Inductive formula := var (_ : Atom) | wedge (_ _ : formula) | top | vee (_ _ : formula) | bot.
 Infix "∧" := wedge (at level 35).
-Notation "'𝖳'" := top.
+Notation "⊤" := top.
 Infix "∨" := vee (at level 35).
-Notation "'⊥'" := bot.
+Notation "⊥" := bot.
 
 Coercion var : Atom >-> formula.
 
@@ -37,7 +37,7 @@ Inductive iall : crelation formula (* formula -> formula -> Type *) :=
 | wr A B C : C ⊢ A -> C ⊢ B -> C ⊢ A ∧ B
 | wl1 B A C : A ⊢ C -> A ∧ B ⊢ C
 | wl2 B A C : A ⊢ C -> B ∧ A ⊢ C
-| tr C : C ⊢ 𝖳
+| tr C : C ⊢ ⊤
 | vr1 B A C : C ⊢ A -> C ⊢ A ∨ B
 | vr2 B A C : C ⊢ A -> C ⊢ B ∨ A
 | vl A B C : A ⊢ C -> B ⊢ C -> A ∨ B ⊢ C

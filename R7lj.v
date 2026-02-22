@@ -25,16 +25,16 @@ Implicit Type X : Atom.
 Inductive formula :=
 | var (_ : Atom) | wedge (_ _ : formula) | top | vee (_ _ : formula) | bot | imp (_ _ : formula).
 Infix "∧" := wedge (at level 35).
-Notation "'𝖳'" := top.
+Notation "⊤" := top.
 Infix "∨" := vee (at level 35).
-Notation "'⊥'" := bot.
+Notation "⊥" := bot.
 Infix "→" := imp (at level 36).
 
 Coercion var : Atom >-> formula.
 
 Fixpoint fsize A := S
 match A with
-| var _ | 𝖳 | ⊥ => 0
+| var _ | ⊤ | ⊥ => 0
 | B ∧ C | B ∨ C | B → C => fsize B + fsize C
 end.
 
@@ -50,7 +50,7 @@ Inductive lj : list formula -> formula -> Type :=
 | wr l A B : l ⊢ A -> l ⊢ B -> l ⊢ A ∧ B
 | wl1 l1 B l2 A C : l1 ++ A :: l2 ⊢ C -> l1 ++ A ∧ B :: l2 ⊢ C
 | wl2 l1 B l2 A C : l1 ++ A :: l2 ⊢ C -> l1 ++ B ∧ A :: l2 ⊢ C
-| tr l : l ⊢ 𝖳
+| tr l : l ⊢ ⊤
 | vr1 B l A : l ⊢ A -> l ⊢ A ∨ B
 | vr2 B l A : l ⊢ A -> l ⊢ B ∨ A
 | vl l1 l2 A B C : l1 ++ A :: l2 ⊢ C -> l1 ++ B :: l2 ⊢ C -> l1 ++ A ∨ B :: l2 ⊢ C

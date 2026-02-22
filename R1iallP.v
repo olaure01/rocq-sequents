@@ -5,7 +5,7 @@
 (** 2nd inductive type with size parameter in [nat] *)
 
 
-From Stdlib Require Import Lia Wf_nat.
+From Stdlib Require Import Lia Wf_nat Relations RelationClasses.
 
 (* Set Mangle Names. Set Mangle Names Light. *)
 Set Default Goal Selector "!".
@@ -18,13 +18,11 @@ Unset Printing Use Implicit Types.
 
 Definition Atom := nat : Type.
 
-Implicit Type X : Atom.
-
 Inductive formula := var (_ : Atom) | wedge (_ _ : formula) | top | vee (_ _ : formula) | bot.
 Infix "∧" := wedge (at level 35).
-Notation "'𝖳'" := top.
+Notation "⊤" := top.
 Infix "∨" := vee (at level 35).
-Notation "'⊥'" := bot.
+Notation "⊥" := bot.
 
 Coercion var : Atom >-> formula.
 
@@ -32,24 +30,17 @@ Coercion var : Atom >-> formula.
 (** * Proofs *)
 
 Reserved Notation "A ⊢ B" (at level 65).
-Inductive iall : formula -> formula -> Prop (* Relation_Definitions.relation formula *) :=
-| ax X : X ⊢ X
+Inductive iall : relation formula (* formula -> formula -> Prop *) :=
+| ax (X : Atom) : X ⊢ X
 | wr A B C : C ⊢ A -> C ⊢ B -> C ⊢ A ∧ B
 | wl1 B A C : A ⊢ C -> A ∧ B ⊢ C
 | wl2 B A C : A ⊢ C -> B ∧ A ⊢ C
-| tr C : C ⊢ 𝖳
+| tr C : C ⊢ ⊤
 | vr1 B A C : C ⊢ A -> C ⊢ A ∨ B
 | vr2 B A C : C ⊢ A -> C ⊢ B ∨ A
 | vl A B C : A ⊢ C -> B ⊢ C -> A ∨ B ⊢ C
 | bl C : ⊥ ⊢ C
 where "A ⊢ B" := (iall A B).
-Arguments ax {_}, _.
-Arguments wl1 [_ _ _] _, _ [_ _] _.
-Arguments wl2 [_ _ _] _, _ [_ _] _.
-Arguments tr {_}, _.
-Arguments vr1 [_ _ _] _, _ [_ _] _.
-Arguments vr2 [_ _ _] _, _ [_ _] _.
-Arguments bl {_}, _.
 
 
 (** * Axiom expansion *)
@@ -61,34 +52,25 @@ Proof. induction A; now repeat constructor. Qed.
 (** * Proofs with size *)
 
 Reserved Notation "n $ A ⊢ B" (at level 64, A at next level, B at next level).
-Inductive iall_s : nat -> formula -> formula -> Prop :=
-| axs X : 1 $ X ⊢ X
+Inductive iall_s : nat -> relation formula :=
+| axs (X : Atom) : 1 $ X ⊢ X
 | wrs n m A B C : n $ C ⊢ A -> m $ C ⊢ B -> S (max n m) $ C ⊢ A ∧ B
 | wl1s n B A C : n $ A ⊢ C -> S n $ A ∧ B ⊢ C
 | wl2s n B A C : n $ A ⊢ C -> S n $ B ∧ A ⊢ C
-| trs C : 1 $ C ⊢ 𝖳
+| trs C : 1 $ C ⊢ ⊤
 | vr1s n B A C : n $ C ⊢ A -> S n $ C ⊢ A ∨ B
 | vr2s n B A C : n $ C ⊢ A -> S n $ C ⊢ B ∨ A
 | vls n m A B C : n $ A ⊢ C -> m $ B ⊢ C -> S (max n m) $ A ∨ B ⊢ C
 | bls C : 1 $ ⊥ ⊢ C
 where "n $ A ⊢ B" := (iall_s n A B).
-Arguments axs {_}, _.
-Arguments wl1s [_ _ _ _] _, [_] _ [_ _] _.
-Arguments wl2s [_ _ _ _] _, [_] _ [_ _] _.
-Arguments trs {_}, _.
-Arguments vr1s [_ _ _ _] _, [_] _ [_ _] _.
-Arguments vr2s [_ _ _ _] _, [_] _ [_ _] _.
-Arguments bls {_}, _.
 
-Lemma ialls_iall n A B : n $ A ⊢ B -> A ⊢ B.
-Proof. now induction 1; constructor. Qed.
-
-Lemma iall_ialls A B : A ⊢ B -> exists n, n $ A ⊢ B.
+Lemma iall_ialls A B : A ⊢ B <-> exists n, n $ A ⊢ B.
 Proof.
-induction 1 as [ | ? ? ? ? IH1 ? IH2 | ? ? ? ? IH | ? ? ? ? IH |
-               | ? ? ? ? IH | ? ? ? ? IH | ? ? ? ? IH1 ? IH2 | ];
- try destruct IH; try destruct IH1; try destruct IH2;
- eexists; econstructor; eassumption.
+split; intro pi.
+- induction pi as [ | ? ? ? ? [] ? [] | ? ? ? ? [] | ? ? ? ? [] |
+               | ? ? ? ? [] | ? ? ? ? [] | ? ? ? ? [] ? [] | ];
+  eexists; constructor; eassumption.
+- destruct pi as [? pi]. now induction pi; constructor.
 Qed.
 
 

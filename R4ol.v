@@ -32,8 +32,8 @@ Inductive formula := var (_ : bool) (_ : Atom) | bin (_ : bool) (_ _ : formula) 
 Coercion pvar := var true.
 Infix "∧" := (bin true) (at level 35).
 Infix "∨" := (bin false) (at level 35).
-Notation "'𝖳'" := (nul true).
-Notation "'⊥'" := (nul false).
+Notation "⊤" := (nul true).
+Notation "⊥" := (nul false).
 
 Reserved Notation "¬ A" (format "¬ A", at level 25, right associativity).
 Fixpoint neg A :=
@@ -65,7 +65,7 @@ Inductive ol : formula -> formula -> Type :=
 | ax X : ⊢ ¬X, X
 | ex A B : ⊢ A, B -> ⊢ B, A
 | w A B C : ⊢ A, C -> ⊢ B, C -> ⊢ A ∧ B, C
-| t C : ⊢ 𝖳, C
+| t C : ⊢ ⊤, C
 | v1 B A C : ⊢ A, C -> ⊢ A ∨ B, C
 | v2 B A C : ⊢ A, C -> ⊢ B ∨ A, C
 | cw B A : ⊢ A, A -> ⊢ A, B
@@ -82,7 +82,7 @@ Proof. apply ex, ax. Qed.
 Lemma wr A B C : ⊢ C, A -> ⊢ C, B -> ⊢ C, A ∧ B.
 Proof. intros. apply ex, w; apply ex; assumption. Qed.
 
-Lemma tr C : ⊢ C, 𝖳.
+Lemma tr C : ⊢ C, ⊤.
 Proof. apply ex, t. Qed.
 
 Lemma v1r B A C : ⊢ C, A -> ⊢ C, A ∨ B.
@@ -174,16 +174,16 @@ split; [ | intros Heq ];
     * apply (IH _ _ _ _ _ pi1 pi2_2); [ | intuition lia ].
       apply PermutationT_swap.
 - apply PermutationT_length_2_inv in HP as [ [= -> ->] | [= -> ->] ].
-  + remember (¬𝖳) as E eqn:HE.
+  + remember (¬⊤) as E eqn:HE.
     destruct pi1 as [ | A B pi1 | A1 A2 B pi1_1 pi1_2 | | A2 A1 B pi1 | A1 A2 B pi1 | A B pi1 ];
       destr_eq HE; subst.
     * apply ex.
       apply (IH _ _ _ _ _ (rew <- [fun x => ⊢ x, C] bineg in t) pi1).
       -- apply PermutationT_swap.
-      -- rewrite ! fsize_neg, (bineg 𝖳). cbn. intuition lia.
+      -- rewrite ! fsize_neg, (bineg ⊤). cbn. intuition lia.
     * apply ex, cw.
-      apply (IH _ _ _ _ (¬𝖳) (rew <- [fun x => ⊢ x, C] bineg in t) pi1); try reflexivity.
-      rewrite ! fsize_neg, (bineg 𝖳). cbn. intuition lia.
+      apply (IH _ _ _ _ (¬⊤) (rew <- [fun x => ⊢ x, C] bineg in t) pi1); try reflexivity.
+      rewrite ! fsize_neg, (bineg ⊤). cbn. intuition lia.
   + apply tr.
 - apply PermutationT_length_2_inv in HP as [ [= -> ->] | [= -> ->] ].
   + remember (¬(C1 ∨ C2)) as E eqn:HE.
@@ -250,14 +250,14 @@ split; [ | intros Heq ];
     * rewrite ! fsize_neg, (bineg (C1 ∧ C2)). cbn. intuition lia.
     * reflexivity.
 - apply PermutationT_diag in HP as [<- <-].
-  remember (¬𝖳) as E eqn:HE.
+  remember (¬⊤) as E eqn:HE.
   destruct pi1 as [ | A B pi1 | A1 A2 B pi1_1 pi1_2 | | A2 A1 B pi1 | A1 A2 B pi1 | A B pi1 ]; destr_eq HE; subst.
   + refine (fst (IH A _ _ _ A (rew <- [fun x => ⊢ x, A] bineg in t) pi1 _ _)).
     -- apply PermutationT_swap.
-    -- rewrite ! fsize_neg, (bineg 𝖳). cbn. intuition lia.
-  + refine (snd (IH A _ _ _ (¬𝖳) (rew <- [fun x => ⊢ x, A] bineg in t) pi1 _ _) eq_refl).
+    -- rewrite ! fsize_neg, (bineg ⊤). cbn. intuition lia.
+  + refine (snd (IH A _ _ _ (¬⊤) (rew <- [fun x => ⊢ x, A] bineg in t) pi1 _ _) eq_refl).
     -- reflexivity.
-    -- rewrite ! fsize_neg, (bineg 𝖳). cbn. intuition lia.
+    -- rewrite ! fsize_neg, (bineg ⊤). cbn. intuition lia.
 - apply PermutationT_diag in HP as [<- <-].
   remember (¬(C1 ∨ C2)) as E eqn:HE.
   destruct pi1 as [ | A B pi1 | A1 A2 B pi1_1 pi1_2 | | A2 A1 B pi1 | A1 A2 B pi1 | A B pi1 ]; destr_eq HE; subst.
