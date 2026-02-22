@@ -6,8 +6,8 @@
 
 
 From Stdlib Require Import PeanoNat Lia Wf_nat List CMorphisms.
-From OLlibs Require Import Logic_Datatypes_more.
-Import ListNotations LogicNotations.
+Import ListNotations.
+Infix "<=>" := iffT (at level 95, no associativity).
 
 (* Set Mangle Names. Set Mangle Names Light. *)
 Set Default Goal Selector "!".
@@ -297,6 +297,8 @@ Qed.
 
 
 (** * Axiom expansion *)
+
+(* PAUSE *)
 
 Reserved Notation "A ⊩ B" (at level 65).
 Inductive iwll2at : crelation formula :=
