@@ -98,91 +98,82 @@ end.
 Lemma cut A B C : ⊢ A, ¬B -> ⊢ B, C -> ⊢ A, C.
 Proof.
 intros pi1 pi2.
-enough (forall D E, ⊢ D, E -> (D = A -> E = ¬B -> ⊢ D, C) * (D = ¬B -> E = A -> ⊢ E, C)) as H
-  by (apply (H _ _ pi1); reflexivity).
+(* PAUSE *)
+enough (forall D E, ⊢ D, E -> ((D = A) * (E = ¬B)) + ((D = ¬B) * (E = A)) -> ⊢ A, C) as H
+  by (apply (H _ _ pi1); left; split; reflexivity).
 clear pi1. intros D E pi1.
+
 remember (pweight pi1 + pweight pi2) as n eqn:Hn.
 induction n as [n IHn] in A, B, C, D, E, pi1, pi2, Hn |- * using (well_founded_induction_type lt_wf). subst n.
 assert (forall A' B' C' (pi1' : ⊢ A', ¬B') (pi2' : ⊢ B', C'),
           pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 -> ⊢ A', C') as IH1.
-{ intros A' B' C' pi1' pi2' Hn. exact (fst (IHn _ Hn _ _ _ pi2' _ _ pi1' eq_refl) eq_refl eq_refl). }
+{ intros A' B' C' pi1' pi2' Hn.
+  apply (IHn _ Hn _ _ _ pi2' _ _ pi1' eq_refl). left. split; reflexivity. }
 assert (forall A' B' C' (pi1' : ⊢ ¬B', A') (pi2' : ⊢ B', C'),
-          pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 -> ⊢ A', C') as IH2.
-{ intros A' B' C' pi1' pi2' Hn. exact (snd (IHn _ Hn _ _ _ pi2' _ _ pi1' eq_refl) eq_refl eq_refl). }
-clear IHn.
-destruct pi2 as [ | B C pi2 | B1 B2 C pi2_1 pi2_2 | | B2 B1 C pi2 | B1 B2 C pi2 ]; cbn in *.
-- split; intros -> ->; [ | apply ex ]; assumption.
-- split; intros -> ->.
-  + remember (¬C) as D eqn:HD.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; subst.
-    * destruct C as [ [] Y | | ]; inversion HD.
-      apply ex. exact pi2.
-    * apply ex.
-      remember (pweight pi2) as n eqn:Hn.
-      clear IH2. revert pi2 Hn. rewrite <- (bineg C). intros pi2 ->.
-      apply (IH1 _ _ _ pi2 pi1). cbn. lia.
-    * apply w; [ apply (IH1 _ _ _ pi1_1 (ex pi2)) | apply (IH1 _ _ _ pi1_2 (ex pi2)) ]; cbn; lia.
-    * apply t.
-    * apply v1. apply (IH1 _ _ _ pi1 (ex pi2)). cbn. lia.
-    * apply v2. apply (IH1 _ _ _ pi1 (ex pi2)). cbn. lia.
-  + apply ex.
-    remember (pweight pi2) as n eqn:Hn.
-    clear IH2. revert pi2 Hn. rewrite <- (bineg C). intros pi2 ->.
-    apply (IH1 _ _ _ pi2 pi1). lia.
-- split; intros -> ->.
-  + remember (¬B1 ∨ ¬B2) as D eqn:HD.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; subst.
-    * discriminate HD.
-    * apply (IH2 _ (B1 ∧ B2) _ pi1 (w pi2_1 pi2_2)). cbn. lia.
-    * apply w; [ apply (IH1 _ (B1 ∧ B2) _ pi1_1 (w pi2_1 pi2_2))
-               | apply (IH1 _ (B1 ∧ B2) _ pi1_2 (w pi2_1 pi2_2)) ]; cbn; lia.
-    * apply t.
-    * apply v1. apply (IH1 _ (B1 ∧ B2) _ pi1 (w pi2_1 pi2_2)). cbn. lia.
-    * apply v2. apply (IH1 _ (B1 ∧ B2) _ pi1 (w pi2_1 pi2_2)). cbn. lia.
-  + remember (¬B1 ∨ ¬B2) as D eqn:HD.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; try destr_eq HD; subst.
-    * apply (IH1 _ (B1 ∧ B2) _ pi1 (w pi2_1 pi2_2)). cbn. lia.
+          pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 -> ⊢ A', C') as IH2; [ | clear IHn ].
+{ intros A' B' C' pi1' pi2' Hn.
+  apply (IHn _ Hn _ _ _ pi2' _ _ pi1' eq_refl). right. split; reflexivity. }
+
+remember pi2 as pi2' eqn:Hpi2. apply (f_equal (@pweight _ _)) in Hpi2.
+destruct pi2' as [ | B C pi2_1 | B1 B2 C pi2_1 pi2_2 | | B2 B1 C pi2_1 | B1 B2 C pi2_1 ]; cbn in *.
+- intros [[-> ->] | [-> ->]]; [ | apply ex ]; assumption.
+- intros [[-> ->] | [-> ->]].
+  + match type of pi1 with ⊢ ?F, ?G => remember G as D eqn:HD end.
+    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
+      revert Hpi2; subst; intro Hpi2;
+      try (constructor; ((let pil := fresh in eapply (IH1 _ _ _ ltac:(refine ?[pil]) pi2);
+           instantiate (pil := ltac:(eassumption)); cbn; lia))).
+    * rewrite HD, bineg. assumption.
+    * apply (IH2 _ _ _ pi1 pi2). cbn. lia.
+  + apply ex. (* PAUSE *)
+    apply (IH1 _ _ _ (rew <- [fun x => ⊢ B, x] bineg in pi2_1) pi1).
+    rewrite (bineg C). cbn. lia.
+- intros [[-> ->] | [-> ->]].
+  + match type of pi1 with ⊢ ?F, ?G => remember G as D eqn:HD end.
+    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
+      revert Hpi2; subst; intro Hpi2;
+      try (constructor; ((let pil := fresh in eapply (IH1 _ (B1 ∧ B2) _ ltac:(refine ?[pil]) pi2);
+           instantiate (pil := ltac:(eassumption)); cbn; lia))).
+    apply (IH2 _ (B1 ∧ B2) _ pi1 pi2). cbn. lia.
+  + match type of pi1 with ⊢ ?F, ?G => remember F as D eqn:HD end.
+    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
+      revert Hpi2; subst; intro Hpi2.
+    * apply (IH1 _ (B1 ∧ B2) _ pi1 pi2). cbn. lia.
     * apply (IH2 _ _ _ pi1 pi2_1). cbn. lia.
     * apply (IH2 _ _ _ pi1 pi2_2). cbn. lia.
-- split; intros -> ->.
-  + remember ⊥ as D eqn:HD.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; subst.
-    * discriminate HD.
-    * apply (IH2 _ ⊤ _ pi1 t). cbn. lia.
-    * apply w; [ apply (IH1 _ ⊤ _ pi1_1 t)
-               | apply (IH1 _ ⊤ _ pi1_2 t) ]; cbn; lia.
-    * apply t.
-    * apply v1. apply (IH1 _ ⊤ _ pi1 t). cbn. lia.
-    * apply v2. apply (IH1 _ ⊤ _ pi1 t). cbn. lia.
-  + remember ⊥ as D eqn:HD.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; try destr_eq HD; subst.
-    apply (IH1 _ ⊤ _ pi1 t). cbn. lia.
-- split; intros -> ->.
-  + remember (¬B1 ∧ ¬B2) as D eqn:HD.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; subst.
-    * discriminate HD.
-    * apply (IH2 _ (B1 ∨ B2) _ pi1 (v1 pi2)). cbn. lia.
-    * apply w; [ apply (IH1 _ (B1 ∨ B2) _ pi1_1 (v1 pi2))
-               | apply (IH1 _ (B1 ∨ B2) _ pi1_2 (v1 pi2)) ]; cbn; lia.
-    * apply t.
-    * apply v1. apply (IH1 _ (B1 ∨ B2) _ pi1 (v1 pi2)). cbn. lia.
-    * apply v2. apply (IH1 _ (B1 ∨ B2) _ pi1 (v1 pi2)). cbn. lia.
-  + remember (¬B1 ∧ ¬B2) as D eqn:HD.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; try destr_eq HD; subst.
-    * apply (IH1 _ (B1 ∨ B2) _ pi1 (v1 pi2)). cbn. lia.
-    * apply (IH2 _ _ _ pi1_1 pi2). cbn. lia.
-- split; intros -> ->.
-  + remember (¬B1 ∧ ¬B2) as D eqn:HD.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; subst.
-    * discriminate HD.
-    * apply (IH2 _ (B1 ∨ B2) _ pi1 (v2 pi2)). cbn. lia.
-    * apply w; [ apply (IH1 _ (B1 ∨ B2) _ pi1_1 (v2 pi2))
-               | apply (IH1 _ (B1 ∨ B2) _ pi1_2 (v2 pi2)) ]; cbn; lia.
-    * apply t.
-    * apply v1. apply (IH1 _ (B1 ∨ B2) _ pi1 (v2 pi2)). cbn. lia.
-    * apply v2. apply (IH1 _ (B1 ∨ B2) _ pi1 (v2 pi2)). cbn. lia.
-  + remember (¬B1 ∧ ¬B2) as D eqn:HD.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; try destr_eq HD; subst.
-    * apply (IH1 _ (B1 ∨ B2) _ pi1 (v2 pi2)). cbn. lia.
-    * apply (IH2 _ _ _ pi1_2 pi2). cbn. lia.
+- intros [[-> ->] | [-> ->]].
+  + match type of pi1 with ⊢ ?F, ?G => remember G as D eqn:HD end.
+    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
+      revert Hpi2; subst; intros Hpi2;
+      try (constructor; ((let pil := fresh in eapply (IH1 _ ⊤ _ ltac:(refine ?[pil]) pi2);
+           instantiate (pil := ltac:(eassumption)); cbn; lia))).
+    apply (IH2 _ ⊤ _ pi1 pi2). cbn. lia.
+  + match type of pi1 with ⊢ ?F, ?G => remember F as D eqn:HD end.
+    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
+      revert Hpi2; subst; intro Hpi2.
+    apply (IH1 _ ⊤ _ pi1 pi2). cbn. lia.
+- intros [[-> ->] | [-> ->]].
+  + match type of pi1 with ⊢ ?F, ?G => remember G as D eqn:HD end.
+    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
+      revert Hpi2; subst; intro Hpi2;
+      try (constructor; ((let pil := fresh in eapply (IH1 _ (B1 ∨ B2) _ ltac:(refine ?[pil]) pi2);
+           instantiate (pil := ltac:(eassumption)); cbn; lia))).
+    apply (IH2 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
+  + match type of pi1 with ⊢ ?F, ?G => remember F as D eqn:HD end.
+    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
+      revert Hpi2; subst; intro Hpi2.
+    * apply (IH1 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
+    * apply (IH2 _ _ _ pi1_1 pi2_1). cbn. lia.
+- intros [[-> ->] | [-> ->]].
+  + match type of pi1 with ⊢ ?F, ?G => remember G as D eqn:HD end.
+    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
+      revert Hpi2; subst; intro Hpi2;
+      try (constructor; ((let pil := fresh in eapply (IH1 _ (B1 ∨ B2) _ ltac:(refine ?[pil]) pi2);
+           instantiate (pil := ltac:(eassumption)); cbn; lia))).
+    apply (IH2 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
+  + match type of pi1 with ⊢ ?F, ?G => remember F as D eqn:HD end.
+    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
+      revert Hpi2; subst; intro Hpi2.
+    * apply (IH1 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
+    * apply (IH2 _ _ _ pi1_2 pi2_1). cbn. lia.
 Qed.
