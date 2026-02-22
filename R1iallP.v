@@ -83,35 +83,15 @@ remember (n1 + n2) as n eqn:Hn.
 induction n as [n IHn] in n1, n2, Hn, A, B, C, pi1, pi2 |- * using (well_founded_induction lt_wf). subst n.
 assert (forall m1 m2 A B C, m1 $ A ⊢ B -> m2 $ B ⊢ C -> m1 + m2 < n1 + n2 -> A ⊢ C) as IH; [ | clear IHn ].
 { intros m1 m2 A' B' C' pi1' pi2' Hmn. exact (IHn _ Hmn _ _ _ _ pi1' _ pi2' eq_refl). }
-destruct pi2 as [ X | ? ? C1 C2 B pi2_1 pi2_2 | ? B2 B1 C pi2 | ? B1 B2 C pi2 |
-                | ? C2 C1 B pi2 | ? C1 C2 B pi2 | ? ? B1 B2 C pi2_1 pi2_2 | ].
-- apply (ialls_iall pi1).
-- apply wr; (eapply IH; [ eassumption .. | lia ]).
-- inversion pi1; subst.
-  + refine (IH _ _ _ _ _ _ pi2 _); [ eassumption | lia ].
-  + apply wl1. eapply IH; [ eassumption | apply (wl1s pi2) | lia ].
-  + apply wl2. eapply IH; [ eassumption | apply (wl1s pi2) | lia ].
-  + apply vl; (eapply IH; [ eassumption | apply (wl1s pi2) | lia ]).
-  + apply bl.
-- inversion pi1; subst.
-  + refine (IH _ _ _ _ _ _ pi2 _); [ eassumption | lia ].
-  + apply wl1. eapply IH; [ eassumption | apply (wl2s pi2) | lia ].
-  + apply wl2. eapply IH; [ eassumption | apply (wl2s pi2) | lia ].
-  + apply vl; (eapply IH; [ eassumption | apply (wl2s pi2) | lia ]).
-  + apply bl.
-- apply tr.
-- apply vr1. eapply IH; [ eassumption .. | lia ].
-- apply vr2. eapply IH; [ eassumption .. | lia ].
-- inversion pi1; subst.
-  + apply wl1. eapply IH; [ eassumption | apply (vls pi2_1 pi2_2) | lia ].
-  + apply wl2. eapply IH; [ eassumption | apply (vls pi2_1 pi2_2) | lia ].
-  + eapply IH; [ eassumption .. | lia ].
-  + eapply IH; [ eassumption .. | lia ].
-  + apply vl; (eapply IH; [ eassumption | apply (vls pi2_1 pi2_2) | lia ]).
-  + apply bl.
-- inversion pi1; subst.
-  + apply wl1. eapply IH; [ eassumption | apply bls | lia ].
-  + apply wl2. eapply IH; [ eassumption | apply bls | lia ].
-  + apply vl; (eapply IH; [ eassumption | apply bls | lia ]).
-  + apply bl.
+remember pi2 as pi2' eqn:Hpi2.
+destruct pi2';
+  try (constructor; (eapply IH; [ eassumption .. | lia ])); (* commutative cases on [pi2] *)
+  inversion pi1; revert Hpi2; subst; intro Hpi2; try (constructor; (eapply IH; [ eassumption .. | lia ]));
+     (* commutative cases on [pi1] *)
+  try (eapply IH; [ eassumption .. | lia ]); (* matches left proof first *)
+  try (eapply IH; [ | eassumption | ]; [ eassumption | lia ]). (* matches right proof first *)
 Qed.
+
+
+Instance iall_preorder : PreOrder iall.
+Proof. split; [ exact ax_gen | exact cut ]. Qed.

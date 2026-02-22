@@ -75,57 +75,20 @@ induction n as [n IHn] in A, B, C, pi1, pi2, Hn |- * using (well_founded_inducti
 assert (forall A' B' C' (pi1' : A' ⊢ B') (pi2' : B' ⊢ C'),
           pweight pi1' + pweight pi2' < pweight pi1 + pweight pi2 -> A' ⊢ C') as IH; [ | clear IHn ].
 { intros A' B' C' pi1' pi2' Hn. exact (IHn _ Hn _ _ _ pi1' pi2' eq_refl). }
-destruct pi2 as [ | ? ? ? pi2_1 pi2_2 | B' A' ? pi2 | B' A' ? pi2 |
-                | ? ? ? pi2 | ? ? ? pi2 | A' B' ? pi2_1 pi2_2 | ].
-- assumption.
-- apply wr.
-  + apply (IH _ _ _ pi1 pi2_1). cbn. lia.
-  + apply (IH _ _ _ pi1 pi2_2). cbn. lia.
-- cbn in IH. remember (A' ∧ B') as C' eqn:HC.
-  destruct pi1 as [ | ? ? ? pi1_1 pi1_2 | ? ? ? pi1 | ? ? ? pi1 |
-                  | ? ? ? pi1 | ? ? ? pi1 | ? ? ? pi1_1 pi1_2 | ]; destr_eq HC; subst.
-  + apply (IH _ _ _ pi1_1 pi2). cbn. lia.
-  + apply wl1. apply (IH _ _ _ pi1 (wl1 pi2)). cbn. lia.
-  + apply wl2. apply (IH _ _ _ pi1 (wl1 pi2)). cbn. lia.
-  + apply vl.
-    * apply (IH _ _ _ pi1_1 (wl1 pi2)). cbn. lia.
-    * apply (IH _ _ _ pi1_2 (wl1 pi2)). cbn. lia.
-  + apply bl.
-- cbn in IH. remember (B' ∧ A') as C' eqn:HC.
-  destruct pi1 as [ | ? ? ? pi1_1 pi1_2 | ? ? ? pi1 | ? ? ? pi1 |
-                  | ? ? ? pi1 | ? ? ? pi1 | ? ? ? pi1_1 pi1_2 | ]; destr_eq HC; subst.
-  + apply (IH _ _ _ pi1_2 pi2). cbn. lia.
-  + apply wl1. apply (IH _ _ _ pi1 (wl2 pi2)). cbn. lia.
-  + apply wl2. apply (IH _ _ _ pi1 (wl2 pi2)). cbn. lia.
-  + apply vl.
-    * apply (IH _ _ _ pi1_1 (wl2 pi2)). cbn. lia.
-    * apply (IH _ _ _ pi1_2 (wl2 pi2)). cbn. lia.
-  + apply bl.
-- apply tr.
-- apply vr1. apply (IH _ _ _ pi1 pi2). cbn. lia.
-- apply vr2. apply (IH _ _ _ pi1 pi2). cbn. lia.
-- cbn in IH. remember (A' ∨ B') as C' eqn:HC.
-  destruct pi1 as [ | ? ? ? pi1_1 pi1_2 | ? ? ? pi1 | ? ? ? pi1 |
-                  | ? ? ? pi1 | ? ? ? pi1 | ? ? ? pi1_1 pi1_2 | ]; destr_eq HC; subst.
-  + apply wl1. apply (IH _ _ _ pi1 (vl pi2_1 pi2_2)). cbn. lia.
-  + apply wl2. apply (IH _ _ _ pi1 (vl pi2_1 pi2_2)). cbn. lia.
-  + apply (IH _ _ _ pi1 pi2_1). cbn. lia.
-  + apply (IH _ _ _ pi1 pi2_2). cbn. lia.
-  + apply vl.
-    * apply (IH _ _ _ pi1_1 (vl pi2_1 pi2_2)). cbn. lia.
-    * apply (IH _ _ _ pi1_2 (vl pi2_1 pi2_2)). cbn. lia.
-  + apply bl.
-- cbn in IH. remember ⊥ as C' eqn:HC.
-  destruct pi1 as [ | ? ? ? pi1_1 pi1_2 | ? ? ? pi1 | ? ? ? pi1 |
-                  | ? ? ? pi1 | ? ? ? pi1 | ? ? ? pi1_1 pi1_2 | ]; destr_eq HC; subst.
-  + apply wl1. apply (IH _ _ _ pi1 bl). cbn. lia.
-  + apply wl2. apply (IH _ _ _ pi1 bl). cbn. lia.
-  + apply vl.
-    * apply (IH _ _ _ pi1_1 bl). cbn. lia.
-    * apply (IH _ _ _ pi1_2 bl). cbn. lia.
-  + apply bl.
+remember pi2 as pi2' eqn:Hpi2. apply (f_equal (@pweight _ _)) in Hpi2.
+destruct pi2';
+  try (constructor; (let pir := fresh in eapply (IH _ _ _ pi1 ltac:(refine ?[pir]));
+       instantiate (pir := ltac:(eassumption)); cbn; lia)); (* commutative cases on [pi2] *)
+  try (cbn in *; match type of pi1 with ?F ⊢ ?G => remember G as C' eqn:HC end;
+       destruct pi1; destr_eq HC; subst;
+       try (constructor; (let pil := fresh in eapply (IH _ _ _ ltac:(refine ?[pil]) pi2);
+            instantiate (pil := ltac:(eassumption)); cbn; lia))); (* commutative cases on [pi1] *)
+  (let pil := fresh in let pir := fresh in eapply (IH _ _ _ ltac:(refine ?[pil]) ltac:(refine ?[pir]));
+       (instantiate (pil := ltac:(eassumption)); instantiate (pir := ltac:(eassumption)); cbn; lia)
+           (* matches left proof first *)
+     + instantiate (pir := ltac:(eassumption)); instantiate (pil := ltac:(eassumption)); cbn; lia).
+           (* matches right proof first *)
 Qed.
-
 
 Instance iall_preorder : PreOrder iall.
 Proof. split; [ exact ax_gen | exact cut ]. Qed.
