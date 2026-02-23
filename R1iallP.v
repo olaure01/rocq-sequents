@@ -26,7 +26,6 @@ Notation "⊥" := bot.
 
 Coercion var : Atom >-> formula.
 
-
 (** * Proofs *)
 
 Reserved Notation "A ⊢ B" (at level 65).
@@ -68,7 +67,7 @@ Lemma iall_ialls A B : A ⊢ B <-> exists n, n $ A ⊢ B.
 Proof.
 split; intro pi.
 - induction pi as [ | ? ? ? ? [] ? [] | ? ? ? ? [] | ? ? ? ? [] |
-               | ? ? ? ? [] | ? ? ? ? [] | ? ? ? ? [] ? [] | ];
+                  | ? ? ? ? [] | ? ? ? ? [] | ? ? ? ? [] ? [] | ];
   eexists; constructor; eassumption.
 - destruct pi as [? pi]. now induction pi; constructor.
 Qed.
@@ -91,7 +90,7 @@ destruct pi2';
   inversion pi1; revert Hpi2; subst; intro Hpi2; try (constructor; (eapply IH; [ eassumption .. | lia ]));
      (* commutative cases on [pi1] *)
   try (eapply IH; [ eassumption .. | lia ]); (* matches left proof first *)
-  try (eapply IH; [ | eassumption | ]; [ eassumption | lia ]). (* matches right proof first *)
+  eapply IH; [ | eassumption | ]; [ eassumption | lia ]. (* matches right proof first *)
 Qed.
 
 

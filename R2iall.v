@@ -41,13 +41,13 @@ Inductive iall : crelation formula (* formula -> formula -> Type *) :=
 | vl A B C : A ⊢ C -> B ⊢ C -> A ∨ B ⊢ C
 | bl C : ⊥ ⊢ C
 where "A ⊢ B" := (iall A B).
-Arguments ax {_}, _.
-Arguments wl1 [_ _ _] _, _ [_ _] _.
-Arguments wl2 [_ _ _] _, _ [_ _] _.
-Arguments tr {_}, _.
-Arguments vr1 [_ _ _] _, _ [_ _] _.
-Arguments vr2 [_ _ _] _, _ [_ _] _.
-Arguments bl {_}, _.
+Arguments ax {_}.
+Arguments wl1 [_ _ _] _.
+Arguments wl2 [_ _ _] _.
+Arguments tr {_}.
+Arguments vr1 [_ _ _] _.
+Arguments vr2 [_ _ _] _.
+Arguments bl {_}.
 
 
 (** * Axiom expansion *)

@@ -78,7 +78,7 @@ Proof. intro. apply ex, v2, ex. assumption. Qed.
 
 Lemma ax_gen A : ⊢ ¬A, A.
 Proof.
-induction A as [ b X | b A IHA B IHB | b ]; destruct b; try now constructor.
+induction A as [ b | b | b ]; destruct b; try now constructor.
 - apply axr.
 - apply wr; [ apply v1 | apply v2 ]; assumption.
 - apply w; [ apply v1r | apply v2r ]; assumption.
@@ -94,6 +94,23 @@ match pi with
 | w pi1 pi2 => max (pweight pi1) (pweight pi2)
 | ex pi1 | v1 pi1 | v2 pi1 => pweight pi1
 end.
+
+(* PAUSE *)
+Ltac left_commutative1 pi pi2 Hpi2 IH HD :=
+  match type of pi with ⊢ ?F, ?G => remember G as D eqn:HD end;
+  destruct pi as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
+  revert Hpi2; subst; intro Hpi2;
+  try (constructor; ((let pil := fresh in eapply (IH _ _ _ ltac:(refine ?[pil]) pi2);
+  instantiate (pil := ltac:(eassumption)); cbn; lia))).
+
+Ltac left_commutative2 pi Hpi2 IH :=
+  let HD := fresh "HD" in
+  match type of pi with ⊢ ?F, ?G => remember F as D eqn:HD end;
+  destruct pi as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
+  revert Hpi2; subst; intro Hpi2;
+  try (unshelve eapply (IH _ _ _ pi); [ eassumption | cbn; lia ]);
+  try (unshelve eapply (IH _ _ _ pi1_1); [ eassumption | cbn; lia ]);
+  try (unshelve eapply (IH _ _ _ pi1_2); [ eassumption | cbn; lia ]).
 
 Lemma cut A B C : ⊢ A, ¬B -> ⊢ B, C -> ⊢ A, C.
 Proof.
@@ -117,62 +134,21 @@ remember pi2 as pi2' eqn:Hpi2. apply (f_equal (@pweight _ _)) in Hpi2.
 destruct pi2' as [ | B C pi2_1 | B1 B2 C pi2_1 pi2_2 | | B2 B1 C pi2_1 | B1 B2 C pi2_1 ]; cbn in *.
 - intros [[-> ->] | [-> ->]]; [ | apply ex ]; assumption.
 - intros [[-> ->] | [-> ->]].
-  + match type of pi1 with ⊢ ?F, ?G => remember G as D eqn:HD end.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
-      revert Hpi2; subst; intro Hpi2;
-      try (constructor; ((let pil := fresh in eapply (IH1 _ _ _ ltac:(refine ?[pil]) pi2);
-           instantiate (pil := ltac:(eassumption)); cbn; lia))).
+  + left_commutative1 pi1 pi2 Hpi2 IH1 HD.
     * rewrite HD, bineg. assumption.
     * apply (IH2 _ _ _ pi1 pi2). cbn. lia.
   + apply ex. (* PAUSE *)
-    apply (IH1 _ _ _ (rew <- [fun x => ⊢ B, x] bineg in pi2_1) pi1).
-    rewrite (bineg C). cbn. lia.
-- intros [[-> ->] | [-> ->]].
-  + match type of pi1 with ⊢ ?F, ?G => remember G as D eqn:HD end.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
-      revert Hpi2; subst; intro Hpi2;
-      try (constructor; ((let pil := fresh in eapply (IH1 _ (B1 ∧ B2) _ ltac:(refine ?[pil]) pi2);
-           instantiate (pil := ltac:(eassumption)); cbn; lia))).
-    apply (IH2 _ (B1 ∧ B2) _ pi1 pi2). cbn. lia.
-  + match type of pi1 with ⊢ ?F, ?G => remember F as D eqn:HD end.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
-      revert Hpi2; subst; intro Hpi2.
-    * apply (IH1 _ (B1 ∧ B2) _ pi1 pi2). cbn. lia.
-    * apply (IH2 _ _ _ pi1 pi2_1). cbn. lia.
-    * apply (IH2 _ _ _ pi1 pi2_2). cbn. lia.
-- intros [[-> ->] | [-> ->]].
-  + match type of pi1 with ⊢ ?F, ?G => remember G as D eqn:HD end.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
-      revert Hpi2; subst; intros Hpi2;
-      try (constructor; ((let pil := fresh in eapply (IH1 _ ⊤ _ ltac:(refine ?[pil]) pi2);
-           instantiate (pil := ltac:(eassumption)); cbn; lia))).
-    apply (IH2 _ ⊤ _ pi1 pi2). cbn. lia.
-  + match type of pi1 with ⊢ ?F, ?G => remember F as D eqn:HD end.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
-      revert Hpi2; subst; intro Hpi2.
-    apply (IH1 _ ⊤ _ pi1 pi2). cbn. lia.
-- intros [[-> ->] | [-> ->]].
-  + match type of pi1 with ⊢ ?F, ?G => remember G as D eqn:HD end.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
-      revert Hpi2; subst; intro Hpi2;
-      try (constructor; ((let pil := fresh in eapply (IH1 _ (B1 ∨ B2) _ ltac:(refine ?[pil]) pi2);
-           instantiate (pil := ltac:(eassumption)); cbn; lia))).
-    apply (IH2 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
-  + match type of pi1 with ⊢ ?F, ?G => remember F as D eqn:HD end.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
-      revert Hpi2; subst; intro Hpi2.
-    * apply (IH1 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
-    * apply (IH2 _ _ _ pi1_1 pi2_1). cbn. lia.
-- intros [[-> ->] | [-> ->]].
-  + match type of pi1 with ⊢ ?F, ?G => remember G as D eqn:HD end.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
-      revert Hpi2; subst; intro Hpi2;
-      try (constructor; ((let pil := fresh in eapply (IH1 _ (B1 ∨ B2) _ ltac:(refine ?[pil]) pi2);
-           instantiate (pil := ltac:(eassumption)); cbn; lia))).
-    apply (IH2 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
-  + match type of pi1 with ⊢ ?F, ?G => remember F as D eqn:HD end.
-    destruct pi1 as [ | ? ? pi1 | ? ? ? pi1_1 pi1_2 | | ? ? ? pi1 | ? ? ? pi1 ]; destr_eq HD;
-      revert Hpi2; subst; intro Hpi2.
-    * apply (IH1 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
-    * apply (IH2 _ _ _ pi1_2 pi2_1). cbn. lia.
+    apply (IH1 _ _ _ (rew <- [fun x => ⊢ B, x] bineg in pi2_1) pi1). rewrite (bineg C). cbn. lia.
+- intros [[-> ->] | [-> ->]]; [ left_commutative1 pi1 pi2 Hpi2 IH1 HD | left_commutative2 pi1 Hpi2 IH2 ].
+  + apply (IH2 _ (B1 ∧ B2) _ pi1 pi2). cbn. lia.
+  + apply (IH1 _ (B1 ∧ B2) _ pi1 pi2). cbn. lia.
+- intros [[-> ->] | [-> ->]]; [ left_commutative1 pi1 pi2 Hpi2 IH1 HD | left_commutative2 pi1 Hpi2 IH2 ].
+  + apply (IH2 _ ⊤ _ pi1 pi2). cbn. lia.
+  + apply (IH1 _ ⊤ _ pi1 pi2). cbn. lia.
+- intros [[-> ->] | [-> ->]]; [ left_commutative1 pi1 pi2 Hpi2 IH1 HD | left_commutative2 pi1 Hpi2 IH2 ].
+  + apply (IH2 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
+  + apply (IH1 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
+- intros [[-> ->] | [-> ->]]; [ left_commutative1 pi1 pi2 Hpi2 IH1 HD | left_commutative2 pi1 Hpi2 IH2 ].
+  + apply (IH2 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
+  + apply (IH1 _ (B1 ∨ B2) _ pi1 pi2). cbn. lia.
 Qed.
