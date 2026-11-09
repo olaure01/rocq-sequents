@@ -20,6 +20,7 @@
 .Makefile.d
 Makefile.conf
 Makefile
+META*
 
 *.o
 *.v.crashcoqide

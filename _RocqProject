@@ -1,3 +1,6 @@
+--rocq-package rocq-sequents
+-package rocq-ollibs
+
 # -arg "-mangle-names '__'"
 
 R1iallP.v

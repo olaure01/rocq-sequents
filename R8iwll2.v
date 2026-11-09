@@ -24,8 +24,8 @@ Inductive formula := var (_ : Atom + nat) | wedge (_ _ : formula) | top | frl (_
 Infix "∧" := wedge (at level 35).
 Notation "⊤" := top.
 Notation "∀" := frl.
-Notation lvar X := (var (inl X)). (* Abbreviation in 9.2 *)
-Notation dvar n := (var (inr n)). (* Abbreviation in 9.2 *)
+Abbreviation lvar X := (var (inl X)).
+Abbreviation dvar n := (var (inr n)).
 
 Coercion clvar := fun X => lvar X.
 Coercion cdvar := fun n => dvar n.
@@ -47,7 +47,7 @@ match A with
 | ∀ Y B => ∀ Y (if Nat.eq_dec Y X then B else subs X F B)
 | _ => A
 end.
-Notation "A [ B // X ]" := (subs X B A) (at level 8, format "A [ B // X ]").
+Notation "A [ B // X ]" := (subs X B A) (format "A [ B // X ]").
 
 Lemma fsize_subs_dvar X (n : nat) A : fsize (A[n//X]) = fsize A.
 Proof.
@@ -67,7 +67,7 @@ match A with
 end.
 Notation "X ∈ A" := (In X (freevars A)) (at level 50).
 Notation "X ∉ A" := (~ X ∈ A) (at level 50).
-Notation closed A := (freevars A = []). (* Abbreviation in 9.2 *)
+Abbreviation closed A := (freevars A = []).
 
 Lemma nfree_subs X F A : X ∉ A -> A[F//X] = A.
 Proof.
@@ -94,7 +94,7 @@ match A with
 | ∀ X B => ∀ X (nsubs n F B)
 | _ => A
 end.
-Notation "A [ B /↓ n ]" := (nsubs n B A) (at level 8, format "A [ B /↓ n ]").
+Notation "A [ B /↓ n ]" := (nsubs n B A) (format "A [ B /↓ n ]").
 
 Lemma nsubs_subs_com X F n G (Hin : X ∉ G) A : A[F//X][G/↓n] = A[G/↓n][F[G/↓n]//X].
 Proof.
@@ -122,7 +122,7 @@ match A with
 | ∀ X B => ∀ X (fup k B)
 | _ => A
 end.
-Notation "A ↑" := (fup 0 A) (at level 8, format "A ↑").
+Notation "A ↑" := (fup 0 A) (format "A ↑").
 
 Lemma fsize_fup k A : fsize (fup k A) = fsize A.
 Proof.
